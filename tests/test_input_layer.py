@@ -1,4 +1,6 @@
-from src.input_layer import parse_plateau
+import pytest
+
+from src.input_layer import parse_plateau, parse_position
 
 
 def test_parse_plateau_returns_dictionary():
@@ -22,3 +24,29 @@ def test_parse_plateau_returns_correct_x_y_values():
 
     assert result_1 == {"max_x": 5, "max_y": 5}
     assert result_2 == {"max_x": 4, "max_y": 6}
+
+
+def test_parse_position_returns_dictionary():
+    result = parse_position("1 2 N")
+
+    assert isinstance(result, dict)
+
+
+def test_parse_position_returns_correct_schema():
+    result = parse_position("1 2 N")
+
+    assert all(
+        isinstance(k, str) and isinstance(v, (int, str)) for k, v in result.items()
+    )
+
+
+@pytest.mark.parametrize("x", [1, 2])
+@pytest.mark.parametrize("y", [1, 2])
+@pytest.mark.parametrize("direction", ["N", "E", "S", "W"])
+def test_parse_position_returns_correct_position_values(x: int, y: int, direction: str):
+    inputs = [str(x), str(y), direction]
+    mock_string = " ".join(inputs)
+
+    result = parse_position(mock_string)
+
+    assert result == {"x": x, "y": y, "direction": direction}
