@@ -7,3 +7,7 @@ def parse_plateau(text: str) -> dict[str, int]:
 def parse_position(text: str) -> dict[str, int | str]:
     values = text.split(" ")
     return {"x": int(values[0]), "y": int(values[1]), "direction": values[2]}
+
+
+def parse_instructions(text: str) -> list[str]:
+    return [char for char in text]

@@ -1,6 +1,6 @@
 import pytest
 
-from src.input_layer import parse_plateau, parse_position
+from src.input_layer import parse_instructions, parse_plateau, parse_position
 
 
 def test_parse_plateau_returns_dictionary():
@@ -50,3 +50,35 @@ def test_parse_position_returns_correct_position_values(x: int, y: int, directio
     result = parse_position(mock_string)
 
     assert result == {"x": x, "y": y, "direction": direction}
+
+
+def test_parse_instructions_returns_list():
+    mock_instructions = "LMLMLMLMM"
+
+    result = parse_instructions(mock_instructions)
+
+    assert isinstance(result, list)
+
+
+def test_parse_instructions_returns_single_instruction_list():
+    mock_instructions = "L"
+
+    result = parse_instructions(mock_instructions)
+
+    assert result == ["L"]
+
+
+@pytest.mark.parametrize(
+    "mock_instruction,expected_result",
+    [
+        ("LMR", ["L", "M", "R"]),
+        ("RMML", ["R", "M", "M", "L"]),
+        ("MRMLM", ["M", "R", "M", "L", "M"]),
+    ],
+)
+def test_parse_instructions_returns_multi_instruction_list_in_right_order(
+    mock_instruction, expected_result
+):
+    result = parse_instructions(mock_instruction)
+
+    assert result == expected_result
