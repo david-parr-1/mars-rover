@@ -143,9 +143,3 @@ def load_mission_from_file(path: str | Path) -> str:
         mission_text = file.read()
 
     return mission_text
-
-
-if __name__ == "__main__":
-    mission = load_mission_from_file(Path("data/sample.mission"))
-    mission_data = parse_mission(mission)
-    print(mission_data)
