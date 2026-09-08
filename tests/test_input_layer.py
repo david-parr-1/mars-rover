@@ -1,6 +1,11 @@
 import pytest
 
-from src.input_layer import parse_instructions, parse_plateau, parse_position
+from src.input_layer import (
+    parse_instructions,
+    parse_mission,
+    parse_plateau,
+    parse_position,
+)
 
 
 def test_parse_plateau_returns_dictionary():
@@ -80,5 +85,72 @@ def test_parse_instructions_returns_multi_instruction_list_in_right_order(
     mock_instruction, expected_result
 ):
     result = parse_instructions(mock_instruction)
+
+    assert result == expected_result
+
+
+def test_parse_mission_returns_correct_structure_with_plateau_line_only():
+    mock_mission = "5 5"
+    expected_result = {"plateau": {"max_x": 5, "max_y": 5}, "rovers": []}
+
+    result = parse_mission(mock_mission)
+
+    assert result == expected_result
+
+
+def test_parse_mission_returns_correct_structure_with_one_rover_only():
+    mock_mission = "5 5\n1 2 N\nLMLMLMLMM"
+
+    expected_result = {
+        "plateau": {"max_x": 5, "max_y": 5},
+        "rovers": [
+            {
+                "position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+            }
+        ],
+    }
+
+    result = parse_mission(mock_mission)
+
+    assert result == expected_result
+
+
+def test_parse_mission_returns_correct_structure_with_newline_at_end_of_input():
+    mock_mission = "5 5\n1 2 N\nLMLMLMLMM\n"
+
+    expected_result = {
+        "plateau": {"max_x": 5, "max_y": 5},
+        "rovers": [
+            {
+                "position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+            }
+        ],
+    }
+
+    result = parse_mission(mock_mission)
+
+    assert result == expected_result
+
+
+def test_parse_mission_returns_correct_structure_with_multiple_rovers():
+    mock_mission = "5 5\n1 2 N\nLMLMLMLMM\n3 3 E\nMMRMMRMRRM"
+
+    expected_result = {
+        "plateau": {"max_x": 5, "max_y": 5},
+        "rovers": [
+            {
+                "position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+            },
+            {
+                "position": {"x": 3, "y": 3, "direction": "E"},
+                "instructions": ["M", "M", "R", "M", "M", "R", "M", "R", "R", "M"],
+            },
+        ],
+    }
+
+    result = parse_mission(mock_mission)
 
     assert result == expected_result
