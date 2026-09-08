@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def parse_plateau(text: str) -> dict[str, int]:
     """
     Parses the "plateau" line of a mission input to return a dictionary
@@ -117,3 +120,32 @@ def parse_mission(text: str) -> dict[str, dict | list]:
             parsed_mission["rovers"].append(rover)
 
     return parsed_mission
+
+
+def load_mission_from_file(path: str | Path) -> str:
+    """
+    Reads the file located at path and returns its contents as a string.
+
+    Args:
+        path: the filepath of the file to be read as either a string or Path object
+
+    Returns:
+        The contents of the read file as a string
+
+    Raises:
+        TypeError: If argument passed as path is not string or Path object type
+        FileNotFoundError: If no file could be found at the path provided as the path argument
+    """
+    if not isinstance(path, (str, Path)):
+        raise TypeError(f"Expected type str or Path as path argument. Got {type(path)}")
+
+    with open(path, "r") as file:
+        mission_text = file.read()
+
+    return mission_text
+
+
+if __name__ == "__main__":
+    mission = load_mission_from_file(Path("data/sample.mission"))
+    mission_data = parse_mission(mission)
+    print(mission_data)

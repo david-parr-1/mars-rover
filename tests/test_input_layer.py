@@ -1,6 +1,9 @@
+from unittest.mock import mock_open, patch
+
 import pytest
 
 from src.input_layer import (
+    load_mission_from_file,
     parse_instructions,
     parse_mission,
     parse_plateau,
@@ -154,3 +157,19 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
     result = parse_mission(mock_mission)
 
     assert result == expected_result
+
+
+def test_load_mission_from_file_raises_typeerror_for_invalid_path_argument_type():
+    with pytest.raises(TypeError, match="Expected type str or Path as path argument"):
+        load_mission_from_file(123)  # type: ignore
+
+
+def test_load_mission_from_file_returns_unchanged_string():
+    mock_file_content = "5 5\n1 2 N\nLMLMLMLMM\n3 3 E\nMMRMMRMRRM"
+
+    mock_file = mock_open(read_data=mock_file_content)
+
+    with patch("builtins.open", mock_file):
+        result = load_mission_from_file("dummy/path")
+
+    assert result == mock_file_content
