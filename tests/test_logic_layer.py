@@ -1,6 +1,6 @@
 import pytest
 
-from src.logic_layer import rotate
+from src.logic_layer import move, rotate
 
 
 @pytest.mark.parametrize(
@@ -45,3 +45,109 @@ def test_rotate_raises_typeerror_if_direction_not_str(direction):
         match="The `direction` value of the position dictionary must be a string",
     ):
         rotate(mock_position, "L")
+
+
+@pytest.mark.parametrize(
+    "start_direction,start_x,start_y,end_direction,end_x,end_y",
+    [
+        ("N", 1, 1, "N", 1, 2),
+        ("E", 1, 1, "E", 2, 1),
+        ("S", 1, 1, "S", 1, 0),
+        ("W", 1, 1, "W", 0, 1),
+    ],
+)
+def test_move_returns_correct_position_updates(
+    start_direction, start_x, start_y, end_direction, end_x, end_y
+):
+    mock_position = {"x": start_x, "y": start_y, "direction": start_direction}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {"x": end_x, "y": end_y, "direction": end_direction}
+
+    result = move(mock_position, mock_plateau)
+
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "start_direction,start_x,start_y",
+    [("N", 1, 5), ("E", 5, 1), ("S", 1, 0), ("W", 0, 1)],
+)
+def test_move_returns_unchanged_positions_at_plateau_edges(
+    start_direction, start_x, start_y
+):
+    mock_position = {"x": start_x, "y": start_y, "direction": start_direction}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {"x": start_x, "y": start_y, "direction": start_direction}
+
+    result = move(mock_position, mock_plateau)
+
+    assert result == expected_result
+
+
+def test_move_returns_new_dictionary_when_position_is_updated():
+    mock_position = {"x": 1, "y": 1, "direction": "N"}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {"x": 1, "y": 2, "direction": "N"}
+
+    result = move(mock_position, mock_plateau)
+
+    assert result == expected_result
+    assert result is not mock_position
+
+
+def test_move_returns_new_dictionary_when_position_is_not_updated():
+    mock_position = {"x": 1, "y": 5, "direction": "N"}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {"x": 1, "y": 5, "direction": "N"}
+
+    result = move(mock_position, mock_plateau)
+
+    assert result == expected_result
+    assert result is not mock_position
+
+
+@pytest.mark.parametrize("x", ["1", 1.0, [1], {"1": 1}, {1}, (1,)])
+def test_move_raises_typeerror_if_position_x_not_int(x):
+    mock_position = {"x": x, "y": 2, "direction": "N"}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    with pytest.raises(
+        TypeError,
+        match="The `x` value of the position dictionary must be an integer",
+    ):
+        move(mock_position, mock_plateau)
+
+
+@pytest.mark.parametrize("y", ["1", 1.0, [1], {"1": 1}, {1}, (1,)])
+def test_move_raises_typeerror_if_position_y_not_int(y):
+    mock_position = {"x": 1, "y": y, "direction": "N"}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    with pytest.raises(
+        TypeError,
+        match="The `y` value of the position dictionary must be an integer",
+    ):
+        move(mock_position, mock_plateau)
+
+
+@pytest.mark.parametrize("direction", [1, 1.0, [1], {"1": 1}, {1}, (1,)])
+def test_move_raises_typeerror_if_direction_not_str(direction):
+    mock_position = {"x": 1, "y": 1, "direction": direction}
+
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    with pytest.raises(
+        TypeError,
+        match="The `direction` value of the position dictionary must be a string",
+    ):
+        move(mock_position, mock_plateau)
