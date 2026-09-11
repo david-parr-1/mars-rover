@@ -1,6 +1,6 @@
 import pytest
 
-from src.logic_layer import move, rotate
+from src.logic_layer import execute_instructions, move, rotate
 
 
 @pytest.mark.parametrize(
@@ -151,3 +151,61 @@ def test_move_raises_typeerror_if_direction_not_str(direction):
         match="The `direction` value of the position dictionary must be a string",
     ):
         move(mock_position, mock_plateau)
+
+
+def test_execute_instructions_returns_unchanged_position_for_empty_instructions_list():
+    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_instructions = []
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    result = execute_instructions(mock_position, mock_instructions, mock_plateau)
+
+    assert result == mock_position
+
+
+@pytest.mark.parametrize(
+    "instructions,expected_position",
+    [
+        ("L", {"x": 1, "y": 2, "direction": "W"}),
+        ("R", {"x": 1, "y": 2, "direction": "E"}),
+        ("M", {"x": 1, "y": 3, "direction": "N"}),
+    ],
+)
+def test_execute_instructions_returns_correct_position_for_single_instruction_list(
+    instructions, expected_position
+):
+    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {
+        "x": expected_position["x"],
+        "y": expected_position["y"],
+        "direction": expected_position["direction"],
+    }
+
+    result = execute_instructions(mock_position, instructions, mock_plateau)
+
+    assert result == expected_result
+
+
+def test_execute_instructions_returns_correct_position_for_multi_instruction_list():
+    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_instructions = ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    expected_result = {"x": 1, "y": 3, "direction": "N"}
+
+    result = execute_instructions(mock_position, mock_instructions, mock_plateau)
+
+    assert result == expected_result
+
+
+def test_execute_instructions_does_not_mutate_starting_position():
+    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_instructions = ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
+    mock_plateau = {"max_x": 5, "max_y": 5}
+
+    result = execute_instructions(mock_position, mock_instructions, mock_plateau)
+
+    assert result is not mock_position
+    assert mock_position == {"x": 1, "y": 2, "direction": "N"}

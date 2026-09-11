@@ -104,3 +104,51 @@ def move(
     updated_position["y"] = updated_y
 
     return updated_position
+
+
+def execute_instructions(
+    position: dict[str, str | int], instructions: list[str], plateau: dict[str, int]
+) -> dict[str, str | int]:
+    """
+    Takes a rover's starting position, a list of instructions and a plateau dictionary and processes
+    the instructions to return an updated position dictionary.
+
+    Args:
+        `position`: A rover's position dictionary in the format:
+        ```
+        {
+            "x": 1,
+            "y": 2,
+            "direction": "N"
+        }
+        ```
+
+        `instructions`: A list of single letter strings representing the instructions that
+        the rover is to follow to reach its final position. The letters must be "L" or "R" to rotate
+        the rover to the left or right respectively or "M" to move the rover forward one position on the grid.
+
+        `plateau`: A dictionary containing the maximum x and y value of the mission map.
+        Format example: `{"max_x": 5, "max_y": 5}`
+
+    Returns:
+        A dictionary representing the rover's final position once all instructions have been
+        processed.
+    """
+    updated_position = {**position}
+
+    for instruction in instructions:
+        if instruction == "M":
+            updated_position = move(updated_position, plateau)
+        else:
+            updated_position = rotate(updated_position, instruction)
+
+    return updated_position
+
+
+if __name__ == "__main__":
+    start_position = {"x": 1, "y": 4, "direction": "N"}
+    instructions = ["M", "R", "M", "L", "M"]
+    plateau = {"max_x": 5, "max_y": 5}
+
+    final_position = execute_instructions(start_position, instructions, plateau)
+    print(final_position)
