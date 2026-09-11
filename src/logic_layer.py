@@ -1,4 +1,4 @@
-MOVEMENTS = {
+ROTATIONS = {
     "N": {"L": "W", "R": "E"},
     "E": {"L": "N", "R": "S"},
     "S": {"L": "E", "R": "W"},
@@ -34,6 +34,6 @@ def rotate(position: dict[str, int | str], instruction: str) -> dict[str, int | 
             f"The `direction` value of the position dictionary must be a string. Got {type(start_direction)}"
         )
 
-    rotated_direction = MOVEMENTS[start_direction][instruction]
+    rotated_direction = ROTATIONS[start_direction][instruction]
     updated_position = {**position, "direction": rotated_direction}
     return updated_position
