@@ -1,4 +1,9 @@
+import re
 from pathlib import Path
+
+from src.exceptions import (
+    InvalidPlateauError,
+)
 
 
 def parse_plateau(text: str) -> dict[str, int]:
@@ -14,6 +19,17 @@ def parse_plateau(text: str) -> dict[str, int]:
     Returns:
         A dictionary in the format: {"max_x": 4, "max_y": 6}
     """
+    if not isinstance(text, str):
+        raise TypeError(f"Plateau data must be in string format. Got {type(text)}")
+
+    valid_format = r"^\d{1,2} \d{1,2}$"
+    regex = re.compile(valid_format)
+    if regex.fullmatch(text) == None:
+        raise InvalidPlateauError(
+            f"Plateau data must be two numbers of two digits max with a single space "
+            f"between them in the format 'x y'. Got {text}"
+        )
+
     values = text.split(" ")
     values_int = [*map(int, values)]
     return {"max_x": values_int[0], "max_y": values_int[1]}

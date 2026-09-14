@@ -14,3 +14,9 @@ class InvalidPositionError(MissionError):
     """
     Raised when malformed position data is processed.
     """
+
+
+class InvalidPlateauError(MissionError):
+    """
+    Raised when malformed plateau dimensions are processed.
+    """
