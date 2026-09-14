@@ -143,12 +143,3 @@ def execute_instructions(
             updated_position = rotate(updated_position, instruction)
 
     return updated_position
-
-
-if __name__ == "__main__":
-    start_position = {"x": 1, "y": 4, "direction": "N"}
-    instructions = ["M", "R", "M", "L", "M"]
-    plateau = {"max_x": 5, "max_y": 5}
-
-    final_position = execute_instructions(start_position, instructions, plateau)
-    print(final_position)
