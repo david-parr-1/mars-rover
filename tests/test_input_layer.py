@@ -4,6 +4,7 @@ import pytest
 
 from src.exceptions import (
     InvalidPlateauError,
+    InvalidPositionError,
 )
 from src.input_layer import (
     argument_type_validator,
@@ -76,6 +77,21 @@ def test_parse_position_returns_correct_position_values(x: int, y: int, directio
     result = parse_position(mock_string)
 
     assert result == {"x": x, "y": y, "direction": direction}
+
+
+@pytest.mark.parametrize(
+    "input",
+    ["12E", "1 2E  ", "12 E", "1  2 E", "111 2 E", "1 234 E", "123 546", "1E", "1 2 F"],
+)
+def test_parse_position_raises_invalidpositionerror_for_malformed_input(input):
+    with pytest.raises(
+        InvalidPositionError,
+        match=(
+            "Position data must be two numbers of two digits max and a direction "
+            "value of N, E, S or W with a single space between each value"
+        ),
+    ):
+        parse_position(input)
 
 
 def test_parse_instructions_returns_list():

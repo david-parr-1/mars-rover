@@ -5,9 +5,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from src.exceptions import (
-    InvalidPlateauError,
-)
+from src.exceptions import InvalidPlateauError, InvalidPositionError
 
 
 def argument_type_validator(
@@ -98,6 +96,15 @@ def parse_position(text: str) -> dict[str, int | str]:
         A dictionary in the format: {"x": 1, "y": 2, "direction": "N"}
         Note:- The x and y coordinates are returned as integers.
     """
+    valid_format = r"^\d{1,2} \d{1,2} [NESW]$"
+    regex = re.compile(valid_format)
+    if regex.fullmatch(text) == None:
+        raise InvalidPositionError(
+            f"Position data must be two numbers of two digits max and a direction "
+            f"value of N, E, S or W with a single space between each value e.g. "
+            f"'1 2 E'. Got {text}"
+        )
+
     values = text.split(" ")
     return {"x": int(values[0]), "y": int(values[1]), "direction": values[2]}
 
