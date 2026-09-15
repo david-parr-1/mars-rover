@@ -5,7 +5,11 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from src.exceptions import InvalidPlateauError, InvalidPositionError
+from src.exceptions import (
+    InvalidInstructionError,
+    InvalidPlateauError,
+    InvalidPositionError,
+)
 
 
 def argument_type_validator(
@@ -127,6 +131,15 @@ def parse_instructions(text: str) -> list[str]:
         A list containing each instruction as a distinct element
         e.g. "LMR" input would return ["L", "M", "R"]
     """
+    valid_format = r"^[LMR]+$"
+    regex = re.compile(valid_format)
+    if regex.fullmatch(text) == None:
+        raise InvalidInstructionError(
+            f"Instructions data must be a single continuous string comprising only "
+            f"the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
+            f"forward one space. Got {text}"
+        )
+
     return [char for char in text]
 
 

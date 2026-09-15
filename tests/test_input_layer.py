@@ -3,6 +3,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from src.exceptions import (
+    InvalidInstructionError,
     InvalidPlateauError,
     InvalidPositionError,
 )
@@ -124,6 +125,22 @@ def test_parse_instructions_returns_multi_instruction_list_in_right_order(
     result = parse_instructions(mock_instruction)
 
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "input",
+    [" LMR", "L MR  ", "LMR ", "LQR", "L QR"],
+)
+def test_parse_instructions_raises_invalidinstructionerror_for_malformed_input(input):
+    with pytest.raises(
+        InvalidInstructionError,
+        match=(
+            "Instructions data must be a single continuous string comprising only "
+            "the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
+            "forward one space"
+        ),
+    ):
+        parse_instructions(input)
 
 
 def test_parse_mission_returns_correct_structure_with_plateau_line_only():
