@@ -1,9 +1,55 @@
+import inspect
 import re
+from collections.abc import Callable
+from functools import wraps
 from pathlib import Path
+from typing import Any
 
 from src.exceptions import (
     InvalidPlateauError,
 )
+
+
+def argument_type_validator(
+    argument_types: dict[str, type],
+) -> Callable[..., Callable[..., Any]]:
+    """
+    A decorator function that inspects the data types of the arguments passed to the
+    wrapped function and raises a TypeError exception if they do not match. If the
+    wrapped function's input argument match their expected data types then the wrapped
+    function is executed and its output returned.
+
+    Args:
+        `argument_types`: A dictionary where each key is one of the wrapped function's
+        arguments and its value is the object type that that argument should be. e.g.:
+        ```python
+        {"name": str, "count": int}
+        ```
+    Returns:
+        The result of the executed wrapped function
+    Raises:
+        TypeError: If the data type of any argument passed to the wrapped function does
+        not match the expected data type as defined in the `argument_types` dictionary.
+    """
+
+    def decorator(func) -> Callable[..., Any]:
+        sig = inspect.signature(func)
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            bound_args = sig.bind(*args, **kwargs)
+            for arg in bound_args.arguments:
+                arg_value = bound_args.arguments[arg]
+                if not isinstance(arg_value, argument_types[arg]):
+                    raise TypeError(
+                        f"Expected {argument_types[arg]} as type for {arg} argument "
+                        f"but got {type(arg_value)}"
+                    )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def parse_plateau(text: str) -> dict[str, int]:

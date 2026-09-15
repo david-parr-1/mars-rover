@@ -6,6 +6,7 @@ from src.exceptions import (
     InvalidPlateauError,
 )
 from src.input_layer import (
+    argument_type_validator,
     load_mission_from_file,
     parse_instructions,
     parse_mission,
@@ -196,3 +197,47 @@ def test_load_mission_from_file_returns_unchanged_string():
         result = load_mission_from_file("dummy/path")
 
     assert result == mock_file_content
+
+
+def test_argument_type_validator_accepts_multiple_argument_types():
+    @argument_type_validator({"name": str, "count": int})
+    def describe(name, count):
+        return f"{name}:{count}"
+
+    assert describe("rover", 2) == "rover:2"
+
+
+@pytest.mark.parametrize(
+    "name,count,invalid_argument",
+    [
+        (123, 2, "name"),
+        ("rover", "2", "count"),
+    ],
+)
+def test_argument_type_validator_rejects_invalid_argument_types(
+    name, count, invalid_argument
+):
+    @argument_type_validator({"name": str, "count": int})
+    def describe(name, count):
+        return f"{name}:{count}"
+
+    with pytest.raises(TypeError, match=invalid_argument):
+        describe(name, count)
+
+
+def test_argument_type_validator_supports_keyword_arguments():
+    @argument_type_validator({"name": str, "count": int})
+    def describe(name, count):
+        return f"{name}:{count}"
+
+    assert describe(name="rover", count=2) == "rover:2"
+
+
+def test_argument_type_validator_preserves_function_metadata():
+    @argument_type_validator({"value": str})
+    def process(value):
+        """Process a value."""
+        return value
+
+    assert process.__name__ == "process"
+    assert process.__doc__ == "Process a value."
