@@ -1,10 +1,15 @@
 from typing import cast
 
+from src.exceptions import (
+    InvalidInstructionError,
+    InvalidPlateauError,
+    InvalidPositionError,
+)
 from src.input_layer import parse_mission
 from src.logic_layer import execute_instructions
 
 
-def execute_mission(mission: str) -> str:
+def execute_mission(mission: str) -> str | None:
     """
     Takes a mission in string format and executes the instructions for each rover the
     mission contains. Returns a string containing each rover's new position after
@@ -29,18 +34,21 @@ def execute_mission(mission: str) -> str:
         3 2 E
         ```
     """
-    parsed_mission = parse_mission(mission)
-    plateau = cast(dict[str, int], parsed_mission["plateau"])
-    rover_final_positions = []
-    for rover in parsed_mission["rovers"]:
-        rover_position = rover["position"]
-        rover_instructions = rover["instructions"]
-        rover_new_position = execute_instructions(
-            rover_position, rover_instructions, plateau
-        )
-        rover_new_position_str = " ".join(
-            [str(value) for value in rover_new_position.values()]
-        )
-        rover_final_positions.append(rover_new_position_str)
+    try:
+        parsed_mission = parse_mission(mission)
+        plateau = cast(dict[str, int], parsed_mission["plateau"])
+        rover_final_positions = []
+        for rover in parsed_mission["rovers"]:
+            rover_position = rover["position"]
+            rover_instructions = rover["instructions"]
+            rover_new_position = execute_instructions(
+                rover_position, rover_instructions, plateau
+            )
+            rover_new_position_str = " ".join(
+                [str(value) for value in rover_new_position.values()]
+            )
+            rover_final_positions.append(rover_new_position_str)
 
-    return "\n".join(rover_final_positions)
+        return "\n".join(rover_final_positions)
+    except (InvalidPlateauError, InvalidPositionError, InvalidInstructionError) as err:
+        print(f"Mission execution failed: {err}")
