@@ -52,6 +52,7 @@ def argument_type_validator(
     return decorator
 
 
+@argument_type_validator({"text": str})
 def parse_plateau(text: str) -> dict[str, int]:
     """
     Parses the "plateau" line of a mission input to return a dictionary
@@ -78,6 +79,7 @@ def parse_plateau(text: str) -> dict[str, int]:
     return {"max_x": values_int[0], "max_y": values_int[1]}
 
 
+@argument_type_validator({"text": str})
 def parse_position(text: str) -> dict[str, int | str]:
     """
     Parses the position line of a rover from the mission data input and
@@ -100,6 +102,7 @@ def parse_position(text: str) -> dict[str, int | str]:
     return {"x": int(values[0]), "y": int(values[1]), "direction": values[2]}
 
 
+@argument_type_validator({"text": str})
 def parse_instructions(text: str) -> list[str]:
     """
     Parses a rover's instructions line and returns the instructions as
@@ -120,6 +123,7 @@ def parse_instructions(text: str) -> list[str]:
     return [char for char in text]
 
 
+@argument_type_validator({"text": str})
 def parse_mission(text: str) -> dict[str, dict | list]:
     """
     Parses an entire mission input and returns the data in a formatted
