@@ -65,9 +65,6 @@ def parse_plateau(text: str) -> dict[str, int]:
     Returns:
         A dictionary in the format: {"max_x": 4, "max_y": 6}
     """
-    if not isinstance(text, str):
-        raise TypeError(f"Plateau data must be in string format. Got {type(text)}")
-
     valid_format = r"^\d{1,2} \d{1,2}$"
     regex = re.compile(valid_format)
     if regex.fullmatch(text) == None:

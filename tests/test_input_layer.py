@@ -38,12 +38,6 @@ def test_parse_plateau_returns_correct_x_y_values():
     assert result_2 == {"max_x": 4, "max_y": 6}
 
 
-@pytest.mark.parametrize("input", [1, 1.0, [1], {"1": 1}, {1}, (1,)])
-def test_parse_plateau_raises_typeerror_for_invalid_input_data_type(input):
-    with pytest.raises(TypeError, match="Plateau data must be in string format."):
-        parse_plateau(input)
-
-
 @pytest.mark.parametrize(
     "input", [" 5", "5  ", "5  5", "55", "123 1", "1 234", "123 546"]
 )
