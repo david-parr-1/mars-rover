@@ -1,7 +1,9 @@
+import re
 from unittest.mock import mock_open, patch
 
 import pytest
 
+from src.custom_enums import Instruction
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -108,15 +110,27 @@ def test_parse_instructions_returns_single_instruction_list():
 
     result = parse_instructions(mock_instructions)
 
-    assert result == ["L"]
+    assert result == [Instruction("L")]
 
 
 @pytest.mark.parametrize(
     "mock_instruction,expected_result",
     [
-        ("LMR", ["L", "M", "R"]),
-        ("RMML", ["R", "M", "M", "L"]),
-        ("MRMLM", ["M", "R", "M", "L", "M"]),
+        ("LMR", [Instruction("L"), Instruction("M"), Instruction("R")]),
+        (
+            "RMML",
+            [Instruction("R"), Instruction("M"), Instruction("M"), Instruction("L")],
+        ),
+        (
+            "MRMLM",
+            [
+                Instruction("M"),
+                Instruction("R"),
+                Instruction("M"),
+                Instruction("L"),
+                Instruction("M"),
+            ],
+        ),
     ],
 )
 def test_parse_instructions_returns_multi_instruction_list_in_right_order(
@@ -128,17 +142,21 @@ def test_parse_instructions_returns_multi_instruction_list_in_right_order(
 
 
 @pytest.mark.parametrize(
-    "input",
-    [" LMR", "L MR  ", "LMR ", "LQR", "L QR"],
+    "input,invalid_character",
+    [
+        (" LMR", " "),
+        ("L MR  ", " "),
+        ("LMR ", " "),
+        ("LQR", "Q"),
+        ("L QR", " "),
+    ],
 )
-def test_parse_instructions_raises_invalidinstructionerror_for_malformed_input(input):
+def test_parse_instructions_raises_invalidinstructionerror_for_malformed_input(
+    input, invalid_character
+):
     with pytest.raises(
         InvalidInstructionError,
-        match=(
-            "Instructions data must be a single continuous string comprising only "
-            "the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
-            "forward one space"
-        ),
+        match=rf"{re.escape(repr(invalid_character))} is not a valid Instruction",
     ):
         parse_instructions(input)
 
@@ -160,7 +178,17 @@ def test_parse_mission_returns_correct_structure_with_one_rover_only():
         "rovers": [
             {
                 "position": {"x": 1, "y": 2, "direction": "N"},
-                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+                "instructions": [
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("M"),
+                ],
             }
         ],
     }
@@ -178,7 +206,17 @@ def test_parse_mission_returns_correct_structure_with_newline_at_end_of_input():
         "rovers": [
             {
                 "position": {"x": 1, "y": 2, "direction": "N"},
-                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+                "instructions": [
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("M"),
+                ],
             }
         ],
     }
@@ -196,11 +234,32 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
         "rovers": [
             {
                 "position": {"x": 1, "y": 2, "direction": "N"},
-                "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"],
+                "instructions": [
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("L"),
+                    Instruction("M"),
+                    Instruction("M"),
+                ],
             },
             {
                 "position": {"x": 3, "y": 3, "direction": "E"},
-                "instructions": ["M", "M", "R", "M", "M", "R", "M", "R", "R", "M"],
+                "instructions": [
+                    Instruction("M"),
+                    Instruction("M"),
+                    Instruction("R"),
+                    Instruction("M"),
+                    Instruction("M"),
+                    Instruction("R"),
+                    Instruction("M"),
+                    Instruction("R"),
+                    Instruction("R"),
+                    Instruction("M"),
+                ],
             },
         ],
     }

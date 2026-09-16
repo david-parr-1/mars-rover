@@ -1,19 +1,20 @@
 import pytest
 
+from src.custom_enums import Instruction
 from src.logic_layer import execute_instructions, move, rotate
 
 
 @pytest.mark.parametrize(
     "start_direction,instruction,expected_direction",
     [
-        ("N", "L", "W"),
-        ("N", "R", "E"),
-        ("E", "L", "N"),
-        ("E", "R", "S"),
-        ("S", "L", "E"),
-        ("S", "R", "W"),
-        ("W", "L", "S"),
-        ("W", "R", "N"),
+        ("N", Instruction.LEFT, "W"),
+        ("N", Instruction.RIGHT, "E"),
+        ("E", Instruction.LEFT, "N"),
+        ("E", Instruction.RIGHT, "S"),
+        ("S", Instruction.LEFT, "E"),
+        ("S", Instruction.RIGHT, "W"),
+        ("W", Instruction.LEFT, "S"),
+        ("W", Instruction.RIGHT, "N"),
     ],
 )
 def test_rotate_returns_correct_rotation(
@@ -31,7 +32,7 @@ def test_rotate_returns_correct_rotation(
 def test_rotate_returns_new_dictionary():
     mock_position = {"x": 1, "y": 2, "direction": "N"}
 
-    result = rotate(mock_position, "L")
+    result = rotate(mock_position, Instruction.LEFT)
 
     assert result is not mock_position
 
@@ -44,7 +45,7 @@ def test_rotate_raises_typeerror_if_direction_not_str(direction):
         TypeError,
         match="The `direction` value of the position dictionary must be a string",
     ):
-        rotate(mock_position, "L")
+        rotate(mock_position, Instruction.LEFT)
 
 
 @pytest.mark.parametrize(
@@ -166,9 +167,9 @@ def test_execute_instructions_returns_unchanged_position_for_empty_instructions_
 @pytest.mark.parametrize(
     "instructions,expected_position",
     [
-        ("L", {"x": 1, "y": 2, "direction": "W"}),
-        ("R", {"x": 1, "y": 2, "direction": "E"}),
-        ("M", {"x": 1, "y": 3, "direction": "N"}),
+        ([Instruction.LEFT], {"x": 1, "y": 2, "direction": "W"}),
+        ([Instruction.RIGHT], {"x": 1, "y": 2, "direction": "E"}),
+        ([Instruction.MOVE], {"x": 1, "y": 3, "direction": "N"}),
     ],
 )
 def test_execute_instructions_returns_correct_position_for_single_instruction_list(
@@ -190,7 +191,17 @@ def test_execute_instructions_returns_correct_position_for_single_instruction_li
 
 def test_execute_instructions_returns_correct_position_for_multi_instruction_list():
     mock_position = {"x": 1, "y": 2, "direction": "N"}
-    mock_instructions = ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
+    mock_instructions = [
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("M"),
+    ]
     mock_plateau = {"max_x": 5, "max_y": 5}
 
     expected_result = {"x": 1, "y": 3, "direction": "N"}
@@ -202,7 +213,17 @@ def test_execute_instructions_returns_correct_position_for_multi_instruction_lis
 
 def test_execute_instructions_does_not_mutate_starting_position():
     mock_position = {"x": 1, "y": 2, "direction": "N"}
-    mock_instructions = ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
+    mock_instructions = [
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("L"),
+        Instruction("M"),
+        Instruction("M"),
+    ]
     mock_plateau = {"max_x": 5, "max_y": 5}
 
     result = execute_instructions(mock_position, mock_instructions, mock_plateau)

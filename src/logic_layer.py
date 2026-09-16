@@ -1,12 +1,13 @@
+from src.custom_enums import Instruction
 from src.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 ROTATIONS = {
-    "N": {"L": "W", "R": "E"},
-    "E": {"L": "N", "R": "S"},
-    "S": {"L": "E", "R": "W"},
-    "W": {"L": "S", "R": "N"},
+    "N": {Instruction.LEFT: "W", Instruction.RIGHT: "E"},
+    "E": {Instruction.LEFT: "N", Instruction.RIGHT: "S"},
+    "S": {Instruction.LEFT: "E", Instruction.RIGHT: "W"},
+    "W": {Instruction.LEFT: "S", Instruction.RIGHT: "N"},
 }
 
 MOVEMENTS = {
@@ -17,7 +18,9 @@ MOVEMENTS = {
 }
 
 
-def rotate(position: dict[str, int | str], instruction: str) -> dict[str, int | str]:
+def rotate(
+    position: dict[str, int | str], instruction: Instruction
+) -> dict[str, int | str]:
     """
     Takes a rover's position dictionary and returns a new dictionary with the direction value
     updated in accordance with the instruction argument passed
@@ -32,8 +35,8 @@ def rotate(position: dict[str, int | str], instruction: str) -> dict[str, int | 
         }
         ```
 
-        `instruction`: A string representing the direction in which the rover is to be turned
-        of the value "L" or "R" representing left and right respectively
+        `instruction`: A instruction enum class object representing the direction in which the
+        rover is to be turned e.g. Instruction.LEFT or Instruction.RIGHT
 
     Returns:
         A new dictionary in the same format as the input but with the direction value updated
@@ -128,7 +131,9 @@ def move(
 
 
 def execute_instructions(
-    position: dict[str, str | int], instructions: list[str], plateau: dict[str, int]
+    position: dict[str, str | int],
+    instructions: list[Instruction],
+    plateau: dict[str, int],
 ) -> dict[str, str | int]:
     """
     Takes a rover's starting position, a list of instructions and a plateau dictionary and processes
@@ -144,9 +149,10 @@ def execute_instructions(
         }
         ```
 
-        `instructions`: A list of single letter strings representing the instructions that
-        the rover is to follow to reach its final position. The letters must be "L" or "R" to rotate
-        the rover to the left or right respectively or "M" to move the rover forward one position on the grid.
+        `instructions`: A list of Instruction enum class instances representing the instructions that
+        the rover is to follow to reach its final position. `Instruction.LEFT` and `Instruction.RIGHT` rotate
+        the rover left or right respectively. `Instruction.MOVE` moves the rover forward one space in the
+        direction defined by the value of the `direction` key within its `position` dictionary.
 
         `plateau`: A dictionary containing the maximum x and y value of the mission map.
         Format example: `{"max_x": 5, "max_y": 5}`
@@ -159,7 +165,7 @@ def execute_instructions(
     updated_position = {**position}
 
     for instruction in instructions:
-        if instruction == "M":
+        if instruction == Instruction.MOVE:
             updated_position = move(updated_position, plateau)
         else:
             updated_position = rotate(updated_position, instruction)

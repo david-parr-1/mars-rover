@@ -5,6 +5,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
+from src.custom_enums import Instruction
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -122,10 +123,10 @@ def parse_position(text: str) -> dict[str, int | str]:
 
 
 @argument_type_validator({"text": str})
-def parse_instructions(text: str) -> list[str]:
+def parse_instructions(text: str) -> list[Instruction]:
     """
     Parses a rover's instructions line and returns the instructions as
-    a list.
+    a list of Instruction enum class instances.
 
     Args:
         text: A text string representing the rover's instructions where
@@ -136,19 +137,25 @@ def parse_instructions(text: str) -> list[str]:
             R = Rotate the rover 90deg to the right
 
     Returns:
-        A list containing each instruction as a distinct element
-        e.g. "LMR" input would return ["L", "M", "R"]
+        A list containing each instruction as an instance of the Instruction enum class.
+        e.g. "LMR" input would return [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
     """
-    valid_format = r"^[LMR]+$"
-    regex = re.compile(valid_format)
-    if regex.fullmatch(text) == None:
-        raise InvalidInstructionError(
-            f"Instructions data must be a single continuous string comprising only "
-            f"the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
-            f"forward one space. Got {text}"
-        )
+    # valid_format = r"^[LMR]+$"
+    # regex = re.compile(valid_format)
+    # if regex.fullmatch(text) == None:
+    #     raise InvalidInstructionError(
+    #         f"Instructions data must be a single continuous string comprising only "
+    #         f"the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
+    #         f"forward one space. Got {text}"
+    #     )
 
-    return [char for char in text]
+    try:
+        instruction_list = [Instruction(char) for char in text]
+        return instruction_list
+
+    except ValueError as err:
+        logger.error(f"Function parse_instructions received an invalid argument: {err}")
+        raise InvalidInstructionError(err)
 
 
 @argument_type_validator({"text": str})
