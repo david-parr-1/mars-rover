@@ -1,3 +1,7 @@
+from src.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 ROTATIONS = {
     "N": {"L": "W", "R": "E"},
     "E": {"L": "N", "R": "S"},
@@ -37,6 +41,10 @@ def rotate(position: dict[str, int | str], instruction: str) -> dict[str, int | 
     """
     start_direction = position["direction"]
     if not isinstance(start_direction, str):
+        logger.error(
+            f"rotate() function received non-string direction value in position argument: "
+            f"{position}"
+        )
         raise TypeError(
             f"The `direction` value of the position dictionary must be a string. Got {type(start_direction)}"
         )
@@ -77,16 +85,25 @@ def move(
         y values of the mission plateau, a dictionary is returned with unchanged x and y values.
     """
     if not isinstance(position["x"], int):
+        logger.error(
+            f"move() function received invalid x value in position argument: {position}"
+        )
         raise TypeError(
             f"The `x` value of the position dictionary must be an integer. Got {type(position['x'])}"
         )
 
     if not isinstance(position["y"], int):
+        logger.error(
+            f"move() function received invalid y value in position argument: {position}"
+        )
         raise TypeError(
             f"The `y` value of the position dictionary must be an integer. Got {type(position['x'])}"
         )
 
     if not isinstance(position["direction"], str):
+        logger.error(
+            f"move() function received invalid direction value in position argument: {position}"
+        )
         raise TypeError(
             f"The `direction` value of the position dictionary must be a string. Got {type(position['direction'])}"
         )
@@ -98,6 +115,10 @@ def move(
     # If the updated positions take the rover outside of the plateau then the position
     # dictionary should be returned unchanged
     if not 0 <= updated_x <= plateau["max_x"] or not 0 <= updated_y <= plateau["max_y"]:
+        logger.warning(
+            f"Rover has reached edge of mission plateau. Move {position['direction']} "
+            f"has been ignored from position x: {position['x']} y: {position['y']}"
+        )
         return updated_position
 
     updated_position["x"] = updated_x
@@ -134,6 +155,7 @@ def execute_instructions(
         A dictionary representing the rover's final position once all instructions have been
         processed.
     """
+    logger.info(f"Starting execution of instructions for rover at position: {position}")
     updated_position = {**position}
 
     for instruction in instructions:
@@ -141,5 +163,10 @@ def execute_instructions(
             updated_position = move(updated_position, plateau)
         else:
             updated_position = rotate(updated_position, instruction)
+
+    logger.info(
+        f"Completed execution of instructions. Start position was: {position} | "
+        f"Final position is: {updated_position}"
+    )
 
     return updated_position

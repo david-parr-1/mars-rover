@@ -10,6 +10,9 @@ from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
 )
+from src.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def argument_type_validator(
@@ -43,6 +46,11 @@ def argument_type_validator(
             for arg in bound_args.arguments:
                 arg_value = bound_args.arguments[arg]
                 if not isinstance(arg_value, argument_types[arg]):
+                    logger.error(
+                        f"Function {func.__name__} received invalid argument data "
+                        f"type. Expected {argument_types[arg]} but got "
+                        f"{type(arg_value)}"
+                    )
                     raise TypeError(
                         f"Expected {argument_types[arg]} as type for {arg} argument "
                         f"but got {type(arg_value)}"

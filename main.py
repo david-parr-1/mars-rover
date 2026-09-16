@@ -6,7 +6,10 @@ from src.exceptions import (
     InvalidPositionError,
 )
 from src.input_layer import parse_mission
+from src.logging_config import get_logger
 from src.logic_layer import execute_instructions
+
+logger = get_logger(__name__)
 
 
 def execute_mission(mission: str) -> str | None:
@@ -35,6 +38,7 @@ def execute_mission(mission: str) -> str | None:
         ```
     """
     try:
+        logger.info("Starting mission execution")
         parsed_mission = parse_mission(mission)
         plateau = cast(dict[str, int], parsed_mission["plateau"])
         rover_final_positions = []
@@ -51,4 +55,5 @@ def execute_mission(mission: str) -> str | None:
 
         return "\n".join(rover_final_positions)
     except (InvalidPlateauError, InvalidPositionError, InvalidInstructionError) as err:
-        print(f"Mission execution failed: {err}")
+        logger.error(f"Mission execution aborted: {err}")
+        print(f"Mission execution aborted: {err}")
