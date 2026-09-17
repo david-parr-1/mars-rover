@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from src.custom_enums import Instruction
+from src.custom_enums import CompassDirection, Instruction
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -66,7 +66,8 @@ def test_parse_position_returns_correct_schema():
     result = parse_position("1 2 N")
 
     assert all(
-        isinstance(k, str) and isinstance(v, (int, str)) for k, v in result.items()
+        isinstance(k, str) and isinstance(v, (int, CompassDirection))
+        for k, v in result.items()
     )
 
 
@@ -79,7 +80,7 @@ def test_parse_position_returns_correct_position_values(x: int, y: int, directio
 
     result = parse_position(mock_string)
 
-    assert result == {"x": x, "y": y, "direction": direction}
+    assert result == {"x": x, "y": y, "direction": CompassDirection(direction)}
 
 
 @pytest.mark.parametrize(
@@ -177,7 +178,7 @@ def test_parse_mission_returns_correct_structure_with_one_rover_only():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": "N"},
+                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -205,7 +206,7 @@ def test_parse_mission_returns_correct_structure_with_newline_at_end_of_input():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": "N"},
+                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -233,7 +234,7 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": "N"},
+                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -247,7 +248,7 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
                 ],
             },
             {
-                "position": {"x": 3, "y": 3, "direction": "E"},
+                "position": {"x": 3, "y": 3, "direction": CompassDirection.EAST},
                 "instructions": [
                     Instruction("M"),
                     Instruction("M"),

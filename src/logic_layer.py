@@ -1,26 +1,38 @@
-from src.custom_enums import Instruction
+from src.custom_enums import CompassDirection, Instruction
 from src.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 ROTATIONS = {
-    "N": {Instruction.LEFT: "W", Instruction.RIGHT: "E"},
-    "E": {Instruction.LEFT: "N", Instruction.RIGHT: "S"},
-    "S": {Instruction.LEFT: "E", Instruction.RIGHT: "W"},
-    "W": {Instruction.LEFT: "S", Instruction.RIGHT: "N"},
+    CompassDirection.NORTH: {
+        Instruction.LEFT: CompassDirection.WEST,
+        Instruction.RIGHT: CompassDirection.EAST,
+    },
+    CompassDirection.EAST: {
+        Instruction.LEFT: CompassDirection.NORTH,
+        Instruction.RIGHT: CompassDirection.SOUTH,
+    },
+    CompassDirection.SOUTH: {
+        Instruction.LEFT: CompassDirection.EAST,
+        Instruction.RIGHT: CompassDirection.WEST,
+    },
+    CompassDirection.WEST: {
+        Instruction.LEFT: CompassDirection.SOUTH,
+        Instruction.RIGHT: CompassDirection.NORTH,
+    },
 }
 
 MOVEMENTS = {
-    "N": {"x_change": 0, "y_change": 1},
-    "E": {"x_change": 1, "y_change": 0},
-    "S": {"x_change": 0, "y_change": -1},
-    "W": {"x_change": -1, "y_change": 0},
+    CompassDirection.NORTH: {"x_change": 0, "y_change": 1},
+    CompassDirection.EAST: {"x_change": 1, "y_change": 0},
+    CompassDirection.SOUTH: {"x_change": 0, "y_change": -1},
+    CompassDirection.WEST: {"x_change": -1, "y_change": 0},
 }
 
 
 def rotate(
-    position: dict[str, int | str], instruction: Instruction
-) -> dict[str, int | str]:
+    position: dict[str, int | CompassDirection], instruction: Instruction
+) -> dict[str, int | CompassDirection]:
     """
     Takes a rover's position dictionary and returns a new dictionary with the direction value
     updated in accordance with the instruction argument passed
@@ -43,13 +55,14 @@ def rotate(
         to the new value after rotation
     """
     start_direction = position["direction"]
-    if not isinstance(start_direction, str):
+    if not isinstance(start_direction, CompassDirection):
         logger.error(
-            f"rotate() function received non-string direction value in position argument: "
-            f"{position}"
+            f"rotate() function received non CompassDirection enum direction value in position "
+            f"argument: {position}"
         )
         raise TypeError(
-            f"The `direction` value of the position dictionary must be a string. Got {type(start_direction)}"
+            f"The `direction` value of the position dictionary must be of enum type "
+            f"CompassDirection. Got {type(start_direction)}"
         )
 
     rotated_direction = ROTATIONS[start_direction][instruction]
@@ -58,8 +71,8 @@ def rotate(
 
 
 def move(
-    position: dict[str, str | int], plateau: dict[str, int]
-) -> dict[str, str | int]:
+    position: dict[str, int | CompassDirection], plateau: dict[str, int]
+) -> dict[str, CompassDirection | int]:
     """
     Takes a rover's position dictionary along with a mission plateau dictionary and
     calculates the rover's new position on the map by moving it one place in the direction
@@ -74,7 +87,7 @@ def move(
         {
             "x": 1,
             "y": 2,
-            "direction": "N"
+            "direction": CompassDirection()
         }
         ```
 
@@ -103,7 +116,7 @@ def move(
             f"The `y` value of the position dictionary must be an integer. Got {type(position['x'])}"
         )
 
-    if not isinstance(position["direction"], str):
+    if not isinstance(position["direction"], CompassDirection):
         logger.error(
             f"move() function received invalid direction value in position argument: {position}"
         )
@@ -131,10 +144,10 @@ def move(
 
 
 def execute_instructions(
-    position: dict[str, str | int],
+    position: dict[str, CompassDirection | int],
     instructions: list[Instruction],
     plateau: dict[str, int],
-) -> dict[str, str | int]:
+) -> dict[str, CompassDirection | int]:
     """
     Takes a rover's starting position, a list of instructions and a plateau dictionary and processes
     the instructions to return an updated position dictionary.
@@ -145,7 +158,7 @@ def execute_instructions(
         {
             "x": 1,
             "y": 2,
-            "direction": "N"
+            "direction": CompassDirection()
         }
         ```
 

@@ -1,20 +1,20 @@
 import pytest
 
-from src.custom_enums import Instruction
+from src.custom_enums import CompassDirection, Instruction
 from src.logic_layer import execute_instructions, move, rotate
 
 
 @pytest.mark.parametrize(
     "start_direction,instruction,expected_direction",
     [
-        ("N", Instruction.LEFT, "W"),
-        ("N", Instruction.RIGHT, "E"),
-        ("E", Instruction.LEFT, "N"),
-        ("E", Instruction.RIGHT, "S"),
-        ("S", Instruction.LEFT, "E"),
-        ("S", Instruction.RIGHT, "W"),
-        ("W", Instruction.LEFT, "S"),
-        ("W", Instruction.RIGHT, "N"),
+        (CompassDirection.NORTH, Instruction.LEFT, CompassDirection.WEST),
+        (CompassDirection.NORTH, Instruction.RIGHT, CompassDirection.EAST),
+        (CompassDirection.EAST, Instruction.LEFT, CompassDirection.NORTH),
+        (CompassDirection.EAST, Instruction.RIGHT, CompassDirection.SOUTH),
+        (CompassDirection.SOUTH, Instruction.LEFT, CompassDirection.EAST),
+        (CompassDirection.SOUTH, Instruction.RIGHT, CompassDirection.WEST),
+        (CompassDirection.WEST, Instruction.LEFT, CompassDirection.SOUTH),
+        (CompassDirection.WEST, Instruction.RIGHT, CompassDirection.NORTH),
     ],
 )
 def test_rotate_returns_correct_rotation(
@@ -30,20 +30,23 @@ def test_rotate_returns_correct_rotation(
 
 
 def test_rotate_returns_new_dictionary():
-    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_position = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
 
     result = rotate(mock_position, Instruction.LEFT)
 
     assert result is not mock_position
 
 
-@pytest.mark.parametrize("direction", [1, 1.0, [1], {"1": 1}, {1}, (1,)])
-def test_rotate_raises_typeerror_if_direction_not_str(direction):
+@pytest.mark.parametrize("direction", ["1", 1, 1.0, [1], {"1": 1}, {1}, (1,)])
+def test_rotate_raises_typeerror_if_direction_not_compassdirection(direction):
     mock_position = {"x": 1, "y": 2, "direction": direction}
 
     with pytest.raises(
         TypeError,
-        match="The `direction` value of the position dictionary must be a string",
+        match=(
+            "The `direction` value of the position dictionary must be of enum type "
+            "CompassDirection"
+        ),
     ):
         rotate(mock_position, Instruction.LEFT)
 
@@ -51,10 +54,10 @@ def test_rotate_raises_typeerror_if_direction_not_str(direction):
 @pytest.mark.parametrize(
     "start_direction,start_x,start_y,end_direction,end_x,end_y",
     [
-        ("N", 1, 1, "N", 1, 2),
-        ("E", 1, 1, "E", 2, 1),
-        ("S", 1, 1, "S", 1, 0),
-        ("W", 1, 1, "W", 0, 1),
+        (CompassDirection.NORTH, 1, 1, CompassDirection.NORTH, 1, 2),
+        (CompassDirection.EAST, 1, 1, CompassDirection.EAST, 2, 1),
+        (CompassDirection.SOUTH, 1, 1, CompassDirection.SOUTH, 1, 0),
+        (CompassDirection.WEST, 1, 1, CompassDirection.WEST, 0, 1),
     ],
 )
 def test_move_returns_correct_position_updates(
@@ -73,7 +76,12 @@ def test_move_returns_correct_position_updates(
 
 @pytest.mark.parametrize(
     "start_direction,start_x,start_y",
-    [("N", 1, 5), ("E", 5, 1), ("S", 1, 0), ("W", 0, 1)],
+    [
+        (CompassDirection.NORTH, 1, 5),
+        (CompassDirection.EAST, 5, 1),
+        (CompassDirection.SOUTH, 1, 0),
+        (CompassDirection.WEST, 0, 1),
+    ],
 )
 def test_move_returns_unchanged_positions_at_plateau_edges(
     start_direction, start_x, start_y
@@ -90,11 +98,11 @@ def test_move_returns_unchanged_positions_at_plateau_edges(
 
 
 def test_move_returns_new_dictionary_when_position_is_updated():
-    mock_position = {"x": 1, "y": 1, "direction": "N"}
+    mock_position = {"x": 1, "y": 1, "direction": CompassDirection.NORTH}
 
     mock_plateau = {"max_x": 5, "max_y": 5}
 
-    expected_result = {"x": 1, "y": 2, "direction": "N"}
+    expected_result = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
 
     result = move(mock_position, mock_plateau)
 
@@ -103,11 +111,11 @@ def test_move_returns_new_dictionary_when_position_is_updated():
 
 
 def test_move_returns_new_dictionary_when_position_is_not_updated():
-    mock_position = {"x": 1, "y": 5, "direction": "N"}
+    mock_position = {"x": 1, "y": 5, "direction": CompassDirection.NORTH}
 
     mock_plateau = {"max_x": 5, "max_y": 5}
 
-    expected_result = {"x": 1, "y": 5, "direction": "N"}
+    expected_result = {"x": 1, "y": 5, "direction": CompassDirection.NORTH}
 
     result = move(mock_position, mock_plateau)
 
@@ -155,7 +163,7 @@ def test_move_raises_typeerror_if_direction_not_str(direction):
 
 
 def test_execute_instructions_returns_unchanged_position_for_empty_instructions_list():
-    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_position = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
     mock_instructions = []
     mock_plateau = {"max_x": 5, "max_y": 5}
 
@@ -167,15 +175,15 @@ def test_execute_instructions_returns_unchanged_position_for_empty_instructions_
 @pytest.mark.parametrize(
     "instructions,expected_position",
     [
-        ([Instruction.LEFT], {"x": 1, "y": 2, "direction": "W"}),
-        ([Instruction.RIGHT], {"x": 1, "y": 2, "direction": "E"}),
-        ([Instruction.MOVE], {"x": 1, "y": 3, "direction": "N"}),
+        ([Instruction.LEFT], {"x": 1, "y": 2, "direction": CompassDirection.WEST}),
+        ([Instruction.RIGHT], {"x": 1, "y": 2, "direction": CompassDirection.EAST}),
+        ([Instruction.MOVE], {"x": 1, "y": 3, "direction": CompassDirection.NORTH}),
     ],
 )
 def test_execute_instructions_returns_correct_position_for_single_instruction_list(
     instructions, expected_position
 ):
-    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_position = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
     mock_plateau = {"max_x": 5, "max_y": 5}
 
     expected_result = {
@@ -190,7 +198,7 @@ def test_execute_instructions_returns_correct_position_for_single_instruction_li
 
 
 def test_execute_instructions_returns_correct_position_for_multi_instruction_list():
-    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_position = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
     mock_instructions = [
         Instruction("L"),
         Instruction("M"),
@@ -204,7 +212,7 @@ def test_execute_instructions_returns_correct_position_for_multi_instruction_lis
     ]
     mock_plateau = {"max_x": 5, "max_y": 5}
 
-    expected_result = {"x": 1, "y": 3, "direction": "N"}
+    expected_result = {"x": 1, "y": 3, "direction": CompassDirection.NORTH}
 
     result = execute_instructions(mock_position, mock_instructions, mock_plateau)
 
@@ -212,7 +220,7 @@ def test_execute_instructions_returns_correct_position_for_multi_instruction_lis
 
 
 def test_execute_instructions_does_not_mutate_starting_position():
-    mock_position = {"x": 1, "y": 2, "direction": "N"}
+    mock_position = {"x": 1, "y": 2, "direction": CompassDirection.NORTH}
     mock_instructions = [
         Instruction("L"),
         Instruction("M"),
@@ -229,4 +237,4 @@ def test_execute_instructions_does_not_mutate_starting_position():
     result = execute_instructions(mock_position, mock_instructions, mock_plateau)
 
     assert result is not mock_position
-    assert mock_position == {"x": 1, "y": 2, "direction": "N"}
+    assert mock_position == {"x": 1, "y": 2, "direction": CompassDirection.NORTH}

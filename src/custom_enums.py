@@ -5,3 +5,10 @@ class Instruction(Enum):
     LEFT = "L"
     RIGHT = "R"
     MOVE = "M"
+
+
+class CompassDirection(Enum):
+    NORTH = "N"
+    EAST = "E"
+    SOUTH = "S"
+    WEST = "W"

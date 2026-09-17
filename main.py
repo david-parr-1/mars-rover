@@ -1,5 +1,6 @@
 from typing import cast
 
+from src.custom_enums import CompassDirection
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -49,7 +50,10 @@ def execute_mission(mission: str) -> str | None:
                 rover_position, rover_instructions, plateau
             )
             rover_new_position_str = " ".join(
-                [str(value) for value in rover_new_position.values()]
+                [
+                    value.value if isinstance(value, CompassDirection) else str(value)
+                    for value in rover_new_position.values()
+                ]
             )
             rover_final_positions.append(rover_new_position_str)
 

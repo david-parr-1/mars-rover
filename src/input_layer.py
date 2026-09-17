@@ -5,7 +5,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from src.custom_enums import Instruction
+from src.custom_enums import CompassDirection, Instruction
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -91,7 +91,7 @@ def parse_plateau(text: str) -> dict[str, int]:
 
 
 @argument_type_validator({"text": str})
-def parse_position(text: str) -> dict[str, int | str]:
+def parse_position(text: str) -> dict[str, int | CompassDirection]:
     """
     Parses the position line of a rover from the mission data input and
     returns the values in a dictionary
@@ -119,7 +119,11 @@ def parse_position(text: str) -> dict[str, int | str]:
         )
 
     values = text.split(" ")
-    return {"x": int(values[0]), "y": int(values[1]), "direction": values[2]}
+    return {
+        "x": int(values[0]),
+        "y": int(values[1]),
+        "direction": CompassDirection(values[2]),
+    }
 
 
 @argument_type_validator({"text": str})
@@ -184,11 +188,11 @@ def parse_mission(text: str) -> dict[str, dict | list]:
                 "plateau": {"max_x": 5, "max_y": 5},
                 "rovers": [
                     {
-                        "position": {"x": 1, "y": 2, "direction": "N"},
+                        "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
                         "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
                     },
                     {
-                        "position": {"x": 3, "y": 3, "direction": "E"},
+                        "position": {"x": 3, "y": 3, "direction": CompassDirection.EAST},
                         "instructions": ["M", "M", "R", "M", "M", "R", "M", "R", "R", "M"]
                     }
                 ]
