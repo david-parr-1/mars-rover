@@ -328,3 +328,14 @@ def test_argument_type_validator_preserves_function_metadata():
 
     assert process.__name__ == "process"
     assert process.__doc__ == "Process a value."
+
+
+def test_argument_type_validator_ignores_self_argument_when_validating_class_methods():
+    class Dummy:
+        @argument_type_validator({"dummy_arg": str})
+        def __init__(self, dummy_arg):
+            self._dummy_arg = dummy_arg
+
+    dummy = Dummy("dummy")
+
+    assert dummy._dummy_arg == "dummy"

@@ -45,6 +45,10 @@ def argument_type_validator(
         def wrapper(*args, **kwargs):
             bound_args = sig.bind(*args, **kwargs)
             for arg in bound_args.arguments:
+                # The `self` argument takes no input when using classes so should be ignored
+                # by this validator since no validation is required.
+                if arg == "self":
+                    continue
                 arg_value = bound_args.arguments[arg]
                 if not isinstance(arg_value, argument_types[arg]):
                     logger.error(
