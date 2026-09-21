@@ -119,3 +119,10 @@ class Position:
         Sets the position's `direction` as an instance of the CompassDirection enum class.
         """
         self._direction = value
+
+    def __eq__(self, other) -> None:
+        return (
+            self.x == other.x
+            and self.y == other.y
+            and self.direction == other.direction
+        )
