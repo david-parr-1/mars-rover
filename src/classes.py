@@ -1,3 +1,4 @@
+from src.custom_enums import CompassDirection
 from src.input_layer import argument_type_validator
 
 
@@ -66,3 +67,52 @@ class Plateau:
         Sets the maximum y value of the mission grid plateau.
         """
         self._max_y = value
+
+
+class Position:
+    def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
+        self._x = x
+        self._y = y
+        self._direction = direction
+
+    @property
+    def x(self) -> int:
+        """
+        Returns the position's `x` value as an integer.
+        """
+        return self._x
+
+    @x.setter
+    def x(self, value: int) -> None:
+        """
+        Sets the position's `x` value as an integer.
+        """
+        self._x = value
+
+    @property
+    def y(self) -> int:
+        """
+        Returns the position's `y` value as an integer.
+        """
+        return self._y
+
+    @y.setter
+    def y(self, value: int) -> None:
+        """
+        Sets the position's `y` value as an integer.
+        """
+        self._y = value
+
+    @property
+    def direction(self) -> CompassDirection:
+        """
+        Returns the position's direction as an instance of the CompassDirection enum class.
+        """
+        return self._direction
+
+    @direction.setter
+    def direction(self, value: CompassDirection) -> None:
+        """
+        Sets the position's `direction` as an instance of the CompassDirection enum class.
+        """
+        self._direction = value
