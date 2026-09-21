@@ -19,8 +19,8 @@ class Plateau:
         The `max_x` and `max_y` properties are set at class initialisation but
         can be modified after initialisation.
         """
-        self._max_x = max_x
-        self._max_y = max_y
+        self.max_x = max_x
+        self.max_y = max_y
 
     @property
     def min_x(self) -> int:
@@ -71,9 +71,9 @@ class Plateau:
 
 class Position:
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
-        self._x = x
-        self._y = y
-        self._direction = direction
+        self.x = x
+        self.y = y
+        self.direction = direction
 
     @property
     def x(self) -> int:
