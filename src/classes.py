@@ -83,6 +83,7 @@ class Position:
         return self._x
 
     @x.setter
+    @argument_type_validator({"value": int})
     def x(self, value: int) -> None:
         """
         Sets the position's `x` value as an integer.
@@ -97,6 +98,7 @@ class Position:
         return self._y
 
     @y.setter
+    @argument_type_validator({"value": int})
     def y(self, value: int) -> None:
         """
         Sets the position's `y` value as an integer.
@@ -111,6 +113,7 @@ class Position:
         return self._direction
 
     @direction.setter
+    @argument_type_validator({"value": CompassDirection})
     def direction(self, value: CompassDirection) -> None:
         """
         Sets the position's `direction` as an instance of the CompassDirection enum class.
