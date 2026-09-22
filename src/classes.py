@@ -130,6 +130,9 @@ class Position:
             and self.direction == other.direction
         )
 
+    def __repr__(self) -> str:
+        return f"{{x: {self.x}, y: {self.y}, direction: {self.direction}}}"
+
 
 class Rover:
     def __init__(self, start_position: Position, instructions: str) -> None:

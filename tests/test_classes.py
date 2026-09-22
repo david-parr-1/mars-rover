@@ -52,6 +52,11 @@ def test_position_returns_false_if_attributes_not_eq_to_another_position_instanc
     assert result == expected_result
 
 
+def test_position_repr_formats_correctly(position_class_instance):
+    expected_result = "{{x: 1, y: 2, direction: CompassDirection.NORTH}}".format()
+    assert repr(position_class_instance) == expected_result
+
+
 def test_rover_init_returns_expected_values(rover_class_instance):
     assert rover_class_instance.start_position == Position(
         1, 2, CompassDirection.NORTH
