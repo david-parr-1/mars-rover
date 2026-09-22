@@ -2,7 +2,9 @@ from copy import deepcopy
 
 from src.custom_enums import CompassDirection, Instruction
 from src.input_layer import argument_type_validator, parse_instructions
-from src.logic_layer import MOVEMENTS, ROTATIONS
+from src.logic_layer import MOVEMENTS, ROTATIONS, get_logger
+
+logger = get_logger(__name__)
 
 
 class Plateau:
@@ -22,8 +24,13 @@ class Plateau:
         The `max_x` and `max_y` properties are set at class initialisation but
         can be modified after initialisation.
         """
+        logger.info("Initialising plateau...")
         self.max_x = max_x
         self.max_y = max_y
+        logger.info(
+            f"Plateau initialised successfully. max_x: {self.max_x} | "
+            f"max_y: {self.max_y}"
+        )
 
     @property
     def min_x(self) -> int:
@@ -136,9 +143,14 @@ class Position:
 
 class Rover:
     def __init__(self, start_position: Position, instructions: str) -> None:
+        logger.info("Initialising rover...")
         self.start_position = start_position
         self.latest_position = deepcopy(start_position)
         self.instructions = instructions
+        logger.info(
+            f"Successfully initialised rover. start_position: {self.start_position} | "
+            f"instructions: {self.instructions}"
+        )
 
     @property
     def start_position(self) -> Position:
@@ -165,6 +177,8 @@ class Rover:
         self._latest_position = position
 
     def _move(self, plateau: Plateau) -> Position:
+        initial_position = repr(self.latest_position)
+        logger.info(f"Moving rover at position: {initial_position}")
         start_x = self.latest_position.x
         new_x = start_x + MOVEMENTS[self.latest_position.direction]["x_change"]
         start_y = self.latest_position.y
@@ -176,13 +190,27 @@ class Rover:
         ):
             self.latest_position.x = new_x
             self.latest_position.y = new_y
+            logger.info(
+                f"Rover move complete. Position was: {initial_position} | "
+                f"New position is: {self.latest_position}"
+            )
             return self.latest_position
         else:
+            logger.warning(
+                f"Rover at position {initial_position} has reached the edge "
+                f"of the plateau. Position remains unchanged at {self.latest_position}"
+            )
             return self.latest_position
 
     def _rotate(self, instruction: Instruction) -> Position:
+        initial_position = repr(self.latest_position)
+        logger.info(f"Rotating rover at {initial_position}...")
         rotated_direction = ROTATIONS[self.latest_position.direction][instruction]
         self.latest_position.direction = rotated_direction
+        logger.info(
+            f"Rover rotation completed successfully for rover at {initial_position}. "
+            f"New position is: {self.latest_position}"
+        )
 
         return self.latest_position
 
@@ -190,6 +218,11 @@ class Rover:
         self,
         plateau: Plateau,
     ) -> Position:
+        initial_position = repr(self.latest_position)
+        logger.info(
+            f"Beginning execution of instructions for rover at {initial_position} with "
+            f"instructions: {self.instructions}"
+        )
         for instruction in self.instructions:
             if instruction == Instruction.MOVE:
                 updated_rover_position = self._move(plateau)
@@ -197,5 +230,10 @@ class Rover:
             else:
                 updated_rover_position = self._rotate(instruction)
                 self.latest_position = updated_rover_position
+
+        logger.info(
+            f"Completed execution of instructions. Final rover position: "
+            f"{self.latest_position}"
+        )
 
         return self.latest_position
