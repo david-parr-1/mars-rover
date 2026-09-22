@@ -1,6 +1,6 @@
 import pytest
 
-from src.classes import Plateau, Position
+from src.classes import Plateau, Position, Rover
 from src.custom_enums import CompassDirection
 
 
@@ -16,3 +16,10 @@ def position_class_instance():
     position = Position(1, 2, CompassDirection.NORTH)
 
     return position
+
+
+@pytest.fixture
+def rover_class_instance():
+    rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+
+    return rover

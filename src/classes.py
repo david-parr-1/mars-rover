@@ -1,5 +1,8 @@
-from src.custom_enums import CompassDirection
-from src.input_layer import argument_type_validator
+from copy import deepcopy
+
+from src.custom_enums import CompassDirection, Instruction
+from src.input_layer import argument_type_validator, parse_instructions
+from src.logic_layer import MOVEMENTS, ROTATIONS
 
 
 class Plateau:
@@ -126,3 +129,70 @@ class Position:
             and self.y == other.y
             and self.direction == other.direction
         )
+
+
+class Rover:
+    def __init__(self, start_position: Position, instructions: str) -> None:
+        self.start_position = start_position
+        self.latest_position = deepcopy(start_position)
+        self.instructions = instructions
+
+    @property
+    def start_position(self) -> Position:
+        return self._start_position
+
+    @start_position.setter
+    def start_position(self, position: Position) -> None:
+        self._start_position = position
+
+    @property
+    def instructions(self) -> list[Instruction]:
+        return self._instructions
+
+    @instructions.setter
+    def instructions(self, instructions: str) -> None:
+        self._instructions = parse_instructions(instructions)
+
+    @property
+    def latest_position(self) -> Position:
+        return self._latest_position
+
+    @latest_position.setter
+    def latest_position(self, position: Position) -> None:
+        self._latest_position = position
+
+    def _move(self, plateau: Plateau) -> Position:
+        start_x = self.latest_position.x
+        new_x = start_x + MOVEMENTS[self.latest_position.direction]["x_change"]
+        start_y = self.latest_position.y
+        new_y = start_y + MOVEMENTS[self.latest_position.direction]["y_change"]
+
+        if (
+            plateau.min_x <= new_x <= plateau.max_x
+            and plateau.min_y <= new_y <= plateau.max_y
+        ):
+            self.latest_position.x = new_x
+            self.latest_position.y = new_y
+            return self.latest_position
+        else:
+            return self.latest_position
+
+    def _rotate(self, instruction: Instruction) -> Position:
+        rotated_direction = ROTATIONS[self.latest_position.direction][instruction]
+        self.latest_position.direction = rotated_direction
+
+        return self.latest_position
+
+    def execute_instructions(
+        self,
+        plateau: Plateau,
+    ) -> Position:
+        for instruction in self.instructions:
+            if instruction == Instruction.MOVE:
+                updated_rover_position = self._move(plateau)
+                self.latest_position = updated_rover_position
+            else:
+                updated_rover_position = self._rotate(instruction)
+                self.latest_position = updated_rover_position
+
+        return self.latest_position
