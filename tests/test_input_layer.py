@@ -339,3 +339,16 @@ def test_argument_type_validator_ignores_self_argument_when_validating_class_met
     dummy = Dummy("dummy")
 
     assert dummy._dummy_arg == "dummy"
+
+
+@pytest.mark.parametrize("argument", [123, "123"])
+def test_argument_type_validator_accepts_argument_with_multiple_valid_data_types(
+    argument,
+):
+    @argument_type_validator({"name": str, "count": (int, str)})
+    def dummy_function(name: str, count: int | str):
+        return f"Name: {name} | Count: {count!s}"
+
+    result = dummy_function("test", argument)
+
+    assert result == "Name: test | Count: 123"

@@ -17,19 +17,24 @@ logger = get_logger(__name__)
 
 
 def argument_type_validator(
-    argument_types: dict[str, type],
+    argument_types: dict[str, type | tuple[type, ...]],
 ) -> Callable[..., Callable[..., Any]]:
     """
     A decorator function that inspects the data types of the arguments passed to the
-    wrapped function and raises a TypeError exception if they do not match. If the
-    wrapped function's input argument match their expected data types then the wrapped
-    function is executed and its output returned.
+    wrapped function and raises a TypeError exception if they are not valid for the
+    decorated function's arguments. If the wrapped function's input argument match their
+    expected data types then the wrapped function is executed and its output returned.
 
     Args:
         `argument_types`: A dictionary where each key is one of the wrapped function's
         arguments and its value is the object type that that argument should be. e.g.:
         ```python
         {"name": str, "count": int}
+        ```
+        NOTE:- If a function argument accepts more than one data type, a tuple containing
+        each of the valid data types can be used. e.g.:
+        ```python
+        {"name": str, "count": (int, float)}
         ```
     Returns:
         The result of the executed wrapped function
@@ -50,7 +55,20 @@ def argument_type_validator(
                 if arg == "self":
                     continue
                 arg_value = bound_args.arguments[arg]
-                if not isinstance(arg_value, argument_types[arg]):
+
+                # The specified valid data type(s) are stored in a tuple if they are not in
+                # one already to simplify the type validation.
+                expected_types = argument_types[arg]
+                if not isinstance(expected_types, tuple):
+                    valid_types = (expected_types,)
+                else:
+                    valid_types = expected_types
+
+                type_is_valid = [
+                    isinstance(arg_value, element) for element in valid_types
+                ]
+
+                if not any(type_is_valid):
                     logger.error(
                         f"Function {func.__name__} received invalid argument data "
                         f"type. Expected {argument_types[arg]} but got "
@@ -60,6 +78,17 @@ def argument_type_validator(
                         f"Expected {argument_types[arg]} as type for {arg} argument "
                         f"but got {type(arg_value)}"
                     )
+
+                # if not isinstance(arg_value, argument_types[arg]):
+                #     logger.error(
+                #         f"Function {func.__name__} received invalid argument data "
+                #         f"type. Expected {argument_types[arg]} but got "
+                #         f"{type(arg_value)}"
+                #     )
+                #     raise TypeError(
+                #         f"Expected {argument_types[arg]} as type for {arg} argument "
+                #         f"but got {type(arg_value)}"
+                #     )
             return func(*args, **kwargs)
 
         return wrapper
