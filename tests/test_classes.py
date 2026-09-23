@@ -57,11 +57,26 @@ def test_position_repr_formats_correctly(position_class_instance):
     assert repr(position_class_instance) == expected_result
 
 
-def test_rover_init_returns_expected_values(rover_class_instance):
+def test_rover_init_with_instructions_string_returns_expected_values(
+    rover_class_instance,
+):
     assert rover_class_instance.start_position == Position(
         1, 2, CompassDirection.NORTH
     ), "Rover() class initialised with incorrect start_position value"
     assert rover_class_instance.instructions == [
+        Instruction.LEFT,
+        Instruction.MOVE,
+        Instruction.RIGHT,
+    ], "Rover() class initialised with incorrect instructions value"
+
+
+def test_rover_init_with_list_of_instructions_returns_expected_values(
+    rover_class_instance_with_list_of_instructions,
+):
+    assert rover_class_instance_with_list_of_instructions.start_position == Position(
+        1, 2, CompassDirection.NORTH
+    ), "Rover() class initialised with incorrect start_position value"
+    assert rover_class_instance_with_list_of_instructions.instructions == [
         Instruction.LEFT,
         Instruction.MOVE,
         Instruction.RIGHT,

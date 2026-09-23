@@ -1,7 +1,7 @@
 import pytest
 
 from src.classes import Plateau, Position, Rover
-from src.custom_enums import CompassDirection
+from src.custom_enums import CompassDirection, Instruction
 
 
 @pytest.fixture()
@@ -21,5 +21,15 @@ def position_class_instance():
 @pytest.fixture
 def rover_class_instance():
     rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+
+    return rover
+
+
+@pytest.fixture
+def rover_class_instance_with_list_of_instructions():
+    rover = Rover(
+        Position(1, 2, CompassDirection.NORTH),
+        [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT],
+    )
 
     return rover

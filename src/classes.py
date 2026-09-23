@@ -142,7 +142,9 @@ class Position:
 
 
 class Rover:
-    def __init__(self, start_position: Position, instructions: str) -> None:
+    def __init__(
+        self, start_position: Position, instructions: str | list[Instruction]
+    ) -> None:
         logger.info("Initialising rover...")
         self.start_position = start_position
         self.latest_position = deepcopy(start_position)
@@ -165,8 +167,11 @@ class Rover:
         return self._instructions
 
     @instructions.setter
-    def instructions(self, instructions: str) -> None:
-        self._instructions = parse_instructions(instructions)
+    def instructions(self, instructions: str | list[Instruction]) -> None:
+        if isinstance(instructions, str):
+            self._instructions = parse_instructions(instructions)
+        else:
+            self._instructions = instructions
 
     @property
     def latest_position(self) -> Position:
