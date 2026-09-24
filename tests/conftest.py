@@ -20,16 +20,19 @@ def position_class_instance():
 
 @pytest.fixture
 def rover_class_instance():
-    rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+    plateau = Plateau(5, 5)
+    rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", plateau)
 
     return rover
 
 
 @pytest.fixture
 def rover_class_instance_with_list_of_instructions():
+    plateau = Plateau(5, 5)
     rover = Rover(
         Position(1, 2, CompassDirection.NORTH),
         [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT],
+        plateau,
     )
 
     return rover

@@ -84,17 +84,19 @@ def test_rover_init_with_list_of_instructions_returns_expected_values(
 
 
 def test_rover_move_updates_rover_latest_position_attribute():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", plateau)
 
-    mock_rover._move(Plateau(5, 5))
+    mock_rover._move(plateau)
 
     assert mock_rover.latest_position == Position(1, 3, CompassDirection.NORTH)
 
 
 def test_rover_move_does_not_modify_start_position():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", plateau)
 
-    mock_rover._move(Plateau(5, 5))
+    mock_rover._move(plateau)
 
     assert mock_rover.latest_position == Position(1, 3, CompassDirection.NORTH)
     assert mock_rover.start_position == Position(1, 2, CompassDirection.NORTH)
@@ -118,9 +120,10 @@ def test_rover_move_does_not_modify_start_position():
 def test_rover_move_returns_correct_position_updates(
     start_position, expected_new_position
 ):
-    rover = Rover(start_position, "LMR")
+    plateau = Plateau(5, 5)
+    rover = Rover(start_position, "LMR", plateau)
 
-    result = rover._move(Plateau(5, 5))
+    result = rover._move(plateau)
 
     assert result == expected_new_position
 
@@ -135,15 +138,17 @@ def test_rover_move_returns_correct_position_updates(
     ],
 )
 def test_rover_move_returns_unchanged_position_at_plateau_edges(start_position):
-    rover = Rover(start_position, "LMR")
+    plateau = Plateau(5, 5)
+    rover = Rover(start_position, "LMR", plateau)
 
-    result = rover._move(Plateau(5, 5))
+    result = rover._move(plateau)
 
     assert result == rover.start_position
 
 
 def test_rover_rotate_updates_rover_latest_position_attribute():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", plateau)
 
     mock_rover._rotate(Instruction.RIGHT)
 
@@ -151,7 +156,8 @@ def test_rover_rotate_updates_rover_latest_position_attribute():
 
 
 def test_rover_rotate_does_not_modify_start_position():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", plateau)
 
     mock_rover._rotate(Instruction.RIGHT)
 
@@ -175,7 +181,8 @@ def test_rover_rotate_does_not_modify_start_position():
 def test_rover_rotate_returns_correct_direction(
     start_direction, instruction, expected_direction
 ):
-    mock_rover = Rover(Position(1, 2, start_direction), "LMR")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, start_direction), "LMR", plateau)
 
     rotated_rover = mock_rover._rotate(instruction)
 
@@ -183,41 +190,46 @@ def test_rover_rotate_returns_correct_direction(
 
 
 def test_rover_execute_instructions_returns_unchanged_position_for_empty_instruction_list():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "", plateau)
 
-    moved_rover = mock_rover.execute_instructions(Plateau(5, 5))
+    moved_rover = mock_rover.execute_instructions(plateau)
 
     assert moved_rover == mock_rover.start_position
 
 
 def test_rover_execute_instructions_returns_correct_position_for_single_instruction_list():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "M")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "M", plateau)
 
-    moved_rover = mock_rover.execute_instructions(Plateau(5, 5))
+    moved_rover = mock_rover.execute_instructions(plateau)
 
     assert moved_rover == Position(1, 3, CompassDirection.NORTH)
 
 
 def test_rover_execute_instructions_returns_correct_position_for_multi_instruction_list():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML", plateau)
 
-    moved_rover = mock_rover.execute_instructions(Plateau(5, 5))
+    moved_rover = mock_rover.execute_instructions(plateau)
 
     assert moved_rover == Position(2, 2, CompassDirection.EAST)
 
 
 def test_rover_execute_instructions_updates_rover_latest_position_attribute():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML", plateau)
 
-    mock_rover.execute_instructions(Plateau(5, 5))
+    mock_rover.execute_instructions(plateau)
 
     assert mock_rover.latest_position == Position(2, 2, CompassDirection.EAST)
 
 
 def test_rover_execute_instructions_does_not_modify_rover_start_position():
-    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML")
+    plateau = Plateau(5, 5)
+    mock_rover = Rover(Position(1, 2, CompassDirection.NORTH), "MRMRML", plateau)
 
-    mock_rover.execute_instructions(Plateau(5, 5))
+    mock_rover.execute_instructions(plateau)
 
     assert mock_rover.start_position == Position(1, 2, CompassDirection.NORTH)
     assert mock_rover.latest_position == Position(2, 2, CompassDirection.EAST)

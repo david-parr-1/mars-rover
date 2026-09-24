@@ -143,7 +143,10 @@ class Position:
 
 class Rover:
     def __init__(
-        self, start_position: Position, instructions: str | list[Instruction]
+        self,
+        start_position: Position,
+        instructions: str | list[Instruction],
+        plateau: Plateau,
     ) -> None:
         logger.info("Initialising rover...")
         self.start_position = start_position

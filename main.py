@@ -50,7 +50,7 @@ def execute_mission(mission: str) -> str | None:
                 each["position"]["direction"],
             )
             rover_instructions = each["instructions"]
-            rover = Rover(rover_start_position, rover_instructions)
+            rover = Rover(rover_start_position, rover_instructions, plateau)
             rover_instances.append(rover)
 
         consolidated_output = []
