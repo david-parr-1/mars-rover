@@ -2,6 +2,10 @@ import pytest
 
 from src.classes import Plateau, Position, Rover
 from src.custom_enums import CompassDirection, Instruction
+from src.exceptions import (
+    InvalidPlateauError,
+    InvalidPositionError,
+)
 
 
 def test_plateau_init_returns_expected_values(plateau_class_instance):
@@ -25,6 +29,22 @@ def test_plateau_repr_formats_correctly(plateau_class_instance):
     assert repr(plateau_class_instance) == expected_result
 
 
+@pytest.mark.parametrize("max_x", [-1, 0])
+def test_plateau_init_raises_invalidplateauerror_with_non_positive_max_x_values(max_x):
+    with pytest.raises(
+        InvalidPlateauError, match="Plateau max_x value must be greater than 0"
+    ):
+        Plateau(max_x, 1)
+
+
+@pytest.mark.parametrize("max_y", [-1, 0])
+def test_plateau_init_raises_invalidplateauerror_with_non_positive_max_y_values(max_y):
+    with pytest.raises(
+        InvalidPlateauError, match="Plateau max_y value must be greater than 0"
+    ):
+        Plateau(1, max_y)
+
+
 def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.x == 1, (
         "Position() class initialissed with incorrect x value"
@@ -35,6 +55,24 @@ def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.direction == CompassDirection.NORTH, (
         "Position() class initialised with incorrect direction value"
     )
+
+
+def test_position_init_raises_invalidpositionerror_if_x_lt_0():
+    with pytest.raises(InvalidPositionError, match="The x value cannot be negative"):
+        Position(-1, 1, CompassDirection.NORTH)
+
+
+def test_position_init_raises_invalidpositionerror_if_y_lt_0():
+    with pytest.raises(InvalidPositionError, match="The y value cannot be negative"):
+        Position(1, -1, CompassDirection.NORTH)
+
+
+def test_position_init_successful_when_x_and_y_eq_0():
+    position = Position(0, 0, CompassDirection.NORTH)
+
+    assert position.x == 0
+    assert position.y == 0
+    assert position.direction == CompassDirection.NORTH
 
 
 @pytest.mark.parametrize(
@@ -87,6 +125,40 @@ def test_rover_init_with_list_of_instructions_returns_expected_values(
         Instruction.MOVE,
         Instruction.RIGHT,
     ], "Rover() class initialised with incorrect instructions value"
+
+
+@pytest.mark.parametrize(
+    "plateau,start_position",
+    [
+        (Plateau(1, 2), Position(2, 2, CompassDirection.NORTH)),
+        (Plateau(1, 2), Position(1, 3, CompassDirection.NORTH)),
+        (Plateau(1, 2), Position(2, 3, CompassDirection.NORTH)),
+        (Plateau(5, 5), Position(6, 5, CompassDirection.NORTH)),
+        (Plateau(5, 5), Position(5, 6, CompassDirection.NORTH)),
+        (Plateau(5, 5), Position(6, 6, CompassDirection.NORTH)),
+    ],
+)
+def test_rover_init_raises_invalidpositionerror_with_start_position_outside_plateau_bounds(
+    plateau, start_position
+):
+    with pytest.raises(
+        InvalidPositionError,
+        match=(
+            "A rover's start_position must be within the mission plateau's min and max x and "
+            "y attributes"
+        ),
+    ):
+        Rover(start_position, "LMR", plateau)
+
+
+@pytest.mark.parametrize(
+    "instructions", ["LMR", [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]]
+)
+def test_rover_instructions_setter_accepts_instruction_string_or_list(instructions):
+    plateau = Plateau(5, 5)
+    rover = Rover(Position(1, 2, CompassDirection.NORTH), instructions, plateau)
+
+    assert rover.instructions == [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
 
 
 def test_rover_move_updates_rover_latest_position_attribute():

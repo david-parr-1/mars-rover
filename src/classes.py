@@ -1,6 +1,10 @@
 from copy import deepcopy
 
 from src.custom_enums import CompassDirection, Instruction
+from src.exceptions import (
+    InvalidPlateauError,
+    InvalidPositionError,
+)
 from src.input_layer import argument_type_validator, parse_instructions
 from src.logic_layer import MOVEMENTS, ROTATIONS, get_logger
 
@@ -52,7 +56,15 @@ class Plateau:
     def max_x(self, value: int) -> None:
         """
         Sets the maximum x value of the mission grid plateau.
+
+        Raises:
+            `InvalidPlateauError` if a value of 0 or less is passed.
         """
+        if value <= 0:
+            raise InvalidPlateauError(
+                f"Plateau max_x value must be greater than 0. Got {value}"
+            )
+
         self._max_x = value
 
     @property
@@ -75,7 +87,15 @@ class Plateau:
     def max_y(self, value: int) -> None:
         """
         Sets the maximum y value of the mission grid plateau.
+
+        Raises:
+            `InvalidPlateauError` if a value of 0 or less is passed.
         """
+        if value <= 0:
+            raise InvalidPlateauError(
+                f"Plateau max_y value must be greater than 0. Got {value}"
+            )
+
         self._max_y = value
 
     def __repr__(self) -> str:
@@ -107,7 +127,13 @@ class Position:
     def x(self, value: int) -> None:
         """
         Sets the position's `x` value as an integer.
+
+        Raises:
+            `InvalidPositionError` if a negative value is passed.
         """
+        if value < 0:
+            raise InvalidPositionError(f"The x value cannot be negative. Got {value}")
+
         self._x = value
 
     @property
@@ -122,7 +148,13 @@ class Position:
     def y(self, value: int) -> None:
         """
         Sets the position's `y` value as an integer.
+
+        Raises:
+            `InvalidPositionError` if a negative value is passed.
         """
+        if value < 0:
+            raise InvalidPositionError(f"The y value cannot be negative. Got {value}")
+
         self._y = value
 
     @property
@@ -159,6 +191,27 @@ class Rover:
         plateau: Plateau,
     ) -> None:
         logger.info("Initialising rover...")
+
+        # It is necessary to validate the rover's start_position in relation to the mission
+        # plateau to ensure that a rover doesn't have an "impossible" position i.e. a
+        # position outside of the mission's bound as defined by the plateau's x and y
+        # attributes. NOTE:- Validation that a position does not have negative x or y
+        # values is executed by the Position() class' __init__ method.
+        if not (
+            start_position.x <= plateau.max_x and start_position.y <= plateau.max_y
+        ):
+            logger.error(
+                f"Rover could not be initialised as its start position is outside "
+                f"of the plateau's bounds. Rover start_position: {start_position} | "
+                f"Plateau dimensions: {plateau}"
+            )
+            raise InvalidPositionError(
+                f"A rover's start_position must be within the mission plateau's "
+                f"min and max x and y attributes.\n"
+                f"Plateau attributes are: {plateau}\n"
+                f"Rover start_position is: {start_position}"
+            )
+
         self.start_position = start_position
         self.latest_position = deepcopy(start_position)
         self.instructions = instructions
@@ -172,6 +225,7 @@ class Rover:
         return self._start_position
 
     @start_position.setter
+    @argument_type_validator({"position": Position})
     def start_position(self, position: Position) -> None:
         self._start_position = position
 
@@ -180,6 +234,7 @@ class Rover:
         return self._instructions
 
     @instructions.setter
+    @argument_type_validator({"instructions": (str, list)})
     def instructions(self, instructions: str | list[Instruction]) -> None:
         if isinstance(instructions, str):
             self._instructions = parse_instructions(instructions)
@@ -191,9 +246,11 @@ class Rover:
         return self._latest_position
 
     @latest_position.setter
+    @argument_type_validator({"position": Position})
     def latest_position(self, position: Position) -> None:
         self._latest_position = position
 
+    @argument_type_validator({"plateau": Plateau})
     def _move(self, plateau: Plateau) -> Position:
         initial_position = repr(self.latest_position)
         logger.info(f"Moving rover at position: {initial_position}")
@@ -220,6 +277,7 @@ class Rover:
             )
             return self.latest_position
 
+    @argument_type_validator({"instruction": Instruction})
     def _rotate(self, instruction: Instruction) -> Position:
         initial_position = repr(self.latest_position)
         logger.info(f"Rotating rover at {initial_position}...")
@@ -232,6 +290,7 @@ class Rover:
 
         return self.latest_position
 
+    @argument_type_validator({"plateau": Plateau})
     def execute_instructions(
         self,
         plateau: Plateau,
