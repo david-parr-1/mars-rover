@@ -19,6 +19,12 @@ def test_plateau_init_returns_expected_values(plateau_class_instance):
     )
 
 
+def test_plateau_repr_formats_correctly(plateau_class_instance):
+    expected_result = str({"min_x": 0, "max_x": 1, "min_y": 0, "max_y": 2})
+
+    assert repr(plateau_class_instance) == expected_result
+
+
 def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.x == 1, (
         "Position() class initialissed with incorrect x value"

@@ -78,6 +78,16 @@ class Plateau:
         """
         self._max_y = value
 
+    def __repr__(self) -> str:
+        plateau_dims = {
+            "min_x": self.min_x,
+            "max_x": self.max_x,
+            "min_y": self.min_y,
+            "max_y": self.max_y,
+        }
+
+        return str(plateau_dims)
+
 
 class Position:
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
