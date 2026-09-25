@@ -12,3 +12,8 @@ class CompassDirection(Enum):
     EAST = "E"
     SOUTH = "S"
     WEST = "W"
+
+
+class RoverType(Enum):
+    SCIENCE = "S"
+    CARGO = "C"

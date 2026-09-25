@@ -1,7 +1,7 @@
 import pytest
 
 from src.classes import Plateau, Position, Rover
-from src.custom_enums import CompassDirection, Instruction
+from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
@@ -127,6 +127,20 @@ def test_rover_init_with_list_of_instructions_returns_expected_values(
     ], "Rover() class initialised with incorrect instructions value"
 
 
+def test_rover_init_sets_correct_attribute_values_with_default_rover_type(
+    rover_class_instance,
+):
+    assert rover_class_instance.rover_type == RoverType.SCIENCE
+    assert rover_class_instance.movement_speed == 1
+
+
+def test_rover_init_sets_correct_attribute_values_with_cargo_rover_type(
+    cargo_rover_class_instance,
+):
+    assert cargo_rover_class_instance.rover_type == RoverType.CARGO
+    assert cargo_rover_class_instance.movement_speed == 2
+
+
 @pytest.mark.parametrize(
     "plateau,start_position",
     [
@@ -222,6 +236,56 @@ def test_rover_move_returns_unchanged_position_at_plateau_edges(start_position):
     result = rover._move(plateau)
 
     assert result == rover.start_position
+
+
+@pytest.mark.parametrize(
+    "start_position,expected_position",
+    [
+        (
+            Position(3, 3, CompassDirection.NORTH),
+            Position(3, 5, CompassDirection.NORTH),
+        ),
+        (Position(3, 3, CompassDirection.EAST), Position(5, 3, CompassDirection.EAST)),
+        (
+            Position(3, 3, CompassDirection.SOUTH),
+            Position(3, 1, CompassDirection.SOUTH),
+        ),
+        (Position(3, 3, CompassDirection.WEST), Position(1, 3, CompassDirection.WEST)),
+    ],
+)
+def test_rover_move_moves_2_spaces_for_cargo_rover_type(
+    start_position, expected_position
+):
+    plateau = Plateau(5, 5)
+    rover = Rover(start_position, "LMR", plateau, RoverType.CARGO)
+
+    result = rover._move(plateau)
+
+    assert result == expected_position
+    assert rover.latest_position == expected_position
+
+
+@pytest.mark.parametrize(
+    "start_position",
+    [
+        Position(3, 4, CompassDirection.NORTH),
+        Position(4, 3, CompassDirection.EAST),
+        Position(3, 1, CompassDirection.SOUTH),
+        Position(1, 3, CompassDirection.WEST),
+    ],
+)
+def test_rover_move_returns_unchanged_position_at_plateau_edge_for_cargo_rover(
+    start_position,
+):
+    plateau = Plateau(5, 5)
+    rover = Rover(start_position, "LMR", plateau, RoverType.CARGO)
+
+    result = rover._move(plateau)
+
+    assert result is not start_position
+    assert result == start_position
+    assert rover.latest_position is not start_position
+    assert rover.latest_position == start_position
 
 
 def test_rover_rotate_updates_rover_latest_position_attribute():

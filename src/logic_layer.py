@@ -1,4 +1,4 @@
-from src.custom_enums import CompassDirection, Instruction
+from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +27,11 @@ MOVEMENTS = {
     CompassDirection.EAST: {"x_change": 1, "y_change": 0},
     CompassDirection.SOUTH: {"x_change": 0, "y_change": -1},
     CompassDirection.WEST: {"x_change": -1, "y_change": 0},
+}
+
+MOVEMENT_SPEED = {
+    RoverType.CARGO: 2,
+    RoverType.SCIENCE: 1,
 }
 
 

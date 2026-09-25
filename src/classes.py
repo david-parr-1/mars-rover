@@ -1,12 +1,12 @@
 from copy import deepcopy
 
-from src.custom_enums import CompassDirection, Instruction
+from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
 )
 from src.input_layer import argument_type_validator, parse_instructions
-from src.logic_layer import MOVEMENTS, ROTATIONS, get_logger
+from src.logic_layer import MOVEMENT_SPEED, MOVEMENTS, ROTATIONS, get_logger
 
 logger = get_logger(__name__)
 
@@ -189,6 +189,7 @@ class Rover:
         start_position: Position,
         instructions: str | list[Instruction],
         plateau: Plateau,
+        rover_type: RoverType = RoverType.SCIENCE,
     ) -> None:
         logger.info("Initialising rover...")
 
@@ -215,9 +216,12 @@ class Rover:
         self.start_position = start_position
         self.latest_position = deepcopy(start_position)
         self.instructions = instructions
+        self.rover_type = rover_type
         logger.info(
             f"Successfully initialised rover. start_position: {self.start_position} | "
-            f"instructions: {self.instructions}"
+            f"Rover Type: {self.rover_type} | "
+            f"Movement Speed: {self.movement_speed} | "
+            f"Instructions: {self.instructions}"
         )
 
     @property
@@ -250,14 +254,30 @@ class Rover:
     def latest_position(self, position: Position) -> None:
         self._latest_position = position
 
+    @property
+    def rover_type(self) -> RoverType:
+        return self._rover_type
+
+    @rover_type.setter
+    @argument_type_validator({"rover_type": RoverType})
+    def rover_type(self, rover_type: RoverType) -> None:
+        self._rover_type = rover_type
+
+    @property
+    def movement_speed(self) -> int:
+        return MOVEMENT_SPEED[self.rover_type]
+
     @argument_type_validator({"plateau": Plateau})
     def _move(self, plateau: Plateau) -> Position:
         initial_position = repr(self.latest_position)
         logger.info(f"Moving rover at position: {initial_position}")
         start_x = self.latest_position.x
-        new_x = start_x + MOVEMENTS[self.latest_position.direction]["x_change"]
         start_y = self.latest_position.y
-        new_y = start_y + MOVEMENTS[self.latest_position.direction]["y_change"]
+        base_x_move = MOVEMENTS[self.latest_position.direction]["x_change"]
+        base_y_move = MOVEMENTS[self.latest_position.direction]["y_change"]
+        movement_speed_multiplier = self.movement_speed
+        new_x = start_x + (base_x_move * movement_speed_multiplier)
+        new_y = start_y + (base_y_move * movement_speed_multiplier)
 
         if (
             plateau.min_x <= new_x <= plateau.max_x
