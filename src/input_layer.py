@@ -233,24 +233,30 @@ def parse_mission(text: str) -> dict[str, dict | list]:
 
     """
     mission_lines = [*enumerate(text.split("\n"))]
+    total_mission_lines = len(mission_lines)
 
     parsed_mission = {"plateau": {}, "rovers": []}
-    for line in range(len(mission_lines)):
+    for line in range(total_mission_lines):
+        line_number = mission_lines[line][0]
+        line_text = mission_lines[line][1]
         # First line of the input string is always the "plateau" line
-        if mission_lines[line][0] == 0:
-            parsed_mission["plateau"] = parse_plateau(mission_lines[line][1])
-        # The odd numbered row indexes will always be the "position" line
-        # and even numbered lines will always be the "instructions" line
-        elif mission_lines[line][0] % 2 == 1:
+        if line_number == 0:
+            parsed_mission["plateau"] = parse_plateau(line_text)
+        # Thereafter, each odd numbered row index will always be a single rover's
+        # "position" line. The even numbered line that follows the odd-numbered line
+        # will always be that rover's "instructions" line
+        elif line_number % 2 == 1:
             # Exit the loop if an empty mission line is encountered e.g.
             # if the final line with content has a newline character at
             # the end of it causing the loop to iterate on to the next
             # blank line
-            if mission_lines[line][1] == "":
+            if line_text == "":
                 break
+
+            next_line_text = mission_lines[line + 1][1]
             rover = {
-                "position": parse_position(mission_lines[line][1]),
-                "instructions": parse_instructions(mission_lines[line + 1][1]),
+                "position": parse_position(line_text),
+                "instructions": parse_instructions(next_line_text),
             }
             parsed_mission["rovers"].append(rover)
 
