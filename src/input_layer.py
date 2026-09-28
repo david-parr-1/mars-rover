@@ -5,7 +5,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from src.custom_enums import CompassDirection, Instruction
+from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -124,39 +124,55 @@ def parse_plateau(text: str) -> dict[str, int]:
 
 
 @argument_type_validator({"text": str})
-def parse_position(text: str) -> dict[str, int | CompassDirection]:
+def parse_position(text: str) -> dict[str, int | CompassDirection | RoverType]:
     """
-    Parses the position line of a rover from the mission data input and
-    returns the values in a dictionary
+    Parses a rover's position line from the mission input.
 
-    Args:
-        text: A string representing the position of the rover on the mission
-        grid. The string must be in the format "x y direction" where x is the
-        rover's x coordinate, y is the rover's y coordinate and direction is
-        the direction the rover is facing. This must be a single character
-        representing one of the four cardinal compass points e.g. N = North,
-        E = East, S = South, W = West. The three values must be separated by a
-        single space.
+    The line contains the rover's ``x`` and ``y`` coordinates and facing
+    direction. It may also include a rover type. Values must be separated
+    by single spaces.
 
-    Returns:
-        A dictionary in the format: {"x": 1, "y": 2, "direction": "N"}
-        Note:- The x and y coordinates are returned as integers.
+    :param text: Position in the format ``x y direction [rover_type]``.
+        The direction must be ``N``, ``E``, ``S``, or ``W``. The optional
+        rover type must be ``C`` (Cargo) or ``S`` (Science).
+    :type text: str
+    :returns: A dictionary containing integer coordinates, the direction, and the rover type.
+    :rtype: dict[str, int | CompassDirection | RoverType]
+    :raises InvalidPositionError: If the argument passed to ``text`` does not conform to the format requirementss
+
+    Example:
+
+    .. code-block:: python
+
+        {"x": 1, "y": 2, "direction": CompassDirection.NORTH, "rover_type": RoverType.CARGO}
     """
-    valid_format = r"^\d{1,2} \d{1,2} [NESW]$"
+    text_cleaned = re.sub("[ +]", " ", text)
+
+    valid_format = r"^\d{1,2} \d{1,2} [NESW](?: [CS])?$"
     regex = re.compile(valid_format)
-    if regex.fullmatch(text) == None:
+    if regex.fullmatch(text_cleaned) == None:
         raise InvalidPositionError(
-            f"Position data must be two numbers of two digits max and a direction "
-            f"value of N, E, S or W with a single space between each value e.g. "
-            f"'1 2 E'. Got {text}"
+            f"\nPosition data must be either:\n"
+            f"  - Two numbers of two digits max and a direction value of N, E, "
+            f"S or W with a single space between each value e.g. '1 2 E' or;\n"
+            f"  - Two numbers of two digits max, a direction value of N, E, "
+            f"S or W and either the S or C character to denote the rover type "
+            f"where C = Cargo Rover and S = Science Rover. There must be a "
+            f"single space between each character e.g. '1 2 E S'\n"
+            f"Got {text}"
         )
 
     values = text.split(" ")
-    return {
+    rover_type = RoverType(values[3]) if len(values) == 4 else RoverType.SCIENCE
+
+    parsed_position = {
         "x": int(values[0]),
         "y": int(values[1]),
         "direction": CompassDirection(values[2]),
+        "rover_type": rover_type,
     }
+
+    return parsed_position
 
 
 @argument_type_validator({"text": str})

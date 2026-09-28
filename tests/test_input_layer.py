@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from src.custom_enums import CompassDirection, Instruction
+from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -66,7 +66,7 @@ def test_parse_position_returns_correct_schema():
     result = parse_position("1 2 N")
 
     assert all(
-        isinstance(k, str) and isinstance(v, (int, CompassDirection))
+        isinstance(k, str) and isinstance(v, (int, CompassDirection, RoverType))
         for k, v in result.items()
     )
 
@@ -80,20 +80,70 @@ def test_parse_position_returns_correct_position_values(x: int, y: int, directio
 
     result = parse_position(mock_string)
 
-    assert result == {"x": x, "y": y, "direction": CompassDirection(direction)}
+    assert result == {
+        "x": x,
+        "y": y,
+        "direction": CompassDirection(direction),
+        "rover_type": RoverType.SCIENCE,
+    }
+
+
+@pytest.mark.parametrize(
+    "input,expected_rover",
+    [
+        ("1 2 E S", RoverType.SCIENCE),
+        ("1 2 E C", RoverType.CARGO),
+    ],
+)
+def test_parse_position_returns_correct_rover_type_when_rover_type_is_specified(
+    input, expected_rover
+):
+    expected_result = {
+        "x": 1,
+        "y": 2,
+        "direction": CompassDirection.EAST,
+        "rover_type": expected_rover,
+    }
+
+    result = parse_position(input)
+
+    assert result == expected_result
+
+
+def test_parse_position_returns_science_rover_type_when_rover_type_is_not_specified():
+    expected_result = {
+        "x": 1,
+        "y": 2,
+        "direction": CompassDirection.EAST,
+        "rover_type": RoverType.SCIENCE,
+    }
+
+    result = parse_position("1 2 E")
+
+    assert result == expected_result
 
 
 @pytest.mark.parametrize(
     "input",
-    ["12E", "1 2E  ", "12 E", "1  2 E", "111 2 E", "1 234 E", "123 546", "1E", "1 2 F"],
+    [
+        "12E",
+        "1 2E  ",
+        "12 E",
+        "1  2 E",
+        "111 2 E",
+        "1 234 E",
+        "123 546",
+        "1E",
+        "1 2 F",
+        "1 2 E T",
+        "1 2 ET",
+        "1 2 E S ",
+    ],
 )
 def test_parse_position_raises_invalidpositionerror_for_malformed_input(input):
     with pytest.raises(
         InvalidPositionError,
-        match=(
-            "Position data must be two numbers of two digits max and a direction "
-            "value of N, E, S or W with a single space between each value"
-        ),
+        match=("Position data must be either:"),
     ):
         parse_position(input)
 
@@ -178,7 +228,12 @@ def test_parse_mission_returns_correct_structure_with_one_rover_only():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
+                "position": {
+                    "x": 1,
+                    "y": 2,
+                    "direction": CompassDirection.NORTH,
+                    "rover_type": RoverType.SCIENCE,
+                },
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -206,7 +261,12 @@ def test_parse_mission_returns_correct_structure_with_newline_at_end_of_input():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
+                "position": {
+                    "x": 1,
+                    "y": 2,
+                    "direction": CompassDirection.NORTH,
+                    "rover_type": RoverType.SCIENCE,
+                },
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -234,7 +294,12 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
         "plateau": {"max_x": 5, "max_y": 5},
         "rovers": [
             {
-                "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
+                "position": {
+                    "x": 1,
+                    "y": 2,
+                    "direction": CompassDirection.NORTH,
+                    "rover_type": RoverType.SCIENCE,
+                },
                 "instructions": [
                     Instruction("L"),
                     Instruction("M"),
@@ -248,7 +313,12 @@ def test_parse_mission_returns_correct_structure_with_multiple_rovers():
                 ],
             },
             {
-                "position": {"x": 3, "y": 3, "direction": CompassDirection.EAST},
+                "position": {
+                    "x": 3,
+                    "y": 3,
+                    "direction": CompassDirection.EAST,
+                    "rover_type": RoverType.SCIENCE,
+                },
                 "instructions": [
                     Instruction("M"),
                     Instruction("M"),
