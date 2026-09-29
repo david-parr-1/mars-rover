@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
+
 import pytest
 
-from src.classes import Plateau, Position, Rover
+from src.classes import Mission, Plateau, Position, Rover
 from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidPlateauError,
@@ -427,3 +429,58 @@ def test_rover_eq_returns_false_if_attributes_are_not_identical(comparison_rover
     rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", Plateau(4, 5))
 
     assert rover != comparison_rover
+
+
+def test_mission_init_sets_expected_default_values():
+    mission = Mission()
+
+    assert mission.plateau == None
+    assert mission.rovers == []
+    assert mission.timestamp == None
+
+
+def test_mission_init_sets_correct_values_when_argument_supplied(
+    plateau_class_instance,
+    rover_class_instance_with_list_of_instructions,
+    cargo_rover_class_instance,
+):
+    rovers = [
+        rover_class_instance_with_list_of_instructions,
+        cargo_rover_class_instance,
+    ]
+    timestamp = datetime.now(timezone.utc)
+    mission = Mission(plateau_class_instance, rovers, timestamp)
+
+    assert mission.plateau == plateau_class_instance
+    assert mission.plateau is not plateau_class_instance
+    assert mission.rovers == rovers
+    assert mission.rovers is not rovers
+    assert mission.timestamp == timestamp
+
+
+def test_mission_add_rover_adds_rover_to_empty_list(
+    rover_class_instance_with_list_of_instructions,
+):
+    mission = Mission()
+    expected_result = [rover_class_instance_with_list_of_instructions]
+
+    mission.add_rover(rover_class_instance_with_list_of_instructions)
+
+    assert mission.rovers == expected_result
+
+
+def test_mission_add_rover_adds_rover_to_non_empty_list(
+    rover_class_instance_with_list_of_instructions,
+    cargo_rover_class_instance,
+    plateau_class_instance,
+):
+    rovers = [rover_class_instance_with_list_of_instructions]
+    mission = Mission(plateau_class_instance, rovers)
+    expected_result = [
+        rover_class_instance_with_list_of_instructions,
+        cargo_rover_class_instance,
+    ]
+
+    mission.add_rover(cargo_rover_class_instance)
+
+    assert mission.rovers == expected_result

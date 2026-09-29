@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime
 
 from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
@@ -350,3 +351,48 @@ class Rover:
             and self.instructions == other.instructions
             and self.rover_type == other.rover_type
         )
+
+
+class Mission:
+    def __init__(
+        self,
+        plateau: Plateau | None = None,
+        rovers: list[Rover] | None = None,
+        timestamp: datetime | None = None,
+    ) -> None:
+        self.plateau = plateau
+        self.rovers = rovers
+        self.timestamp = timestamp
+
+    @property
+    def plateau(self) -> Plateau | None:
+        return self._plateau
+
+    @plateau.setter
+    @argument_type_validator({"plateau": (Plateau, type(None))})
+    def plateau(self, plateau: Plateau | None) -> None:
+        self._plateau = deepcopy(plateau)
+
+    @property
+    def rovers(self) -> list[Rover]:
+        return self._rovers
+
+    @rovers.setter
+    def rovers(self, rovers: list | None) -> None:
+        if not rovers:
+            self._rovers = []
+        else:
+            self._rovers = [deepcopy(rover) for rover in rovers]
+
+    @argument_type_validator({"rover": Rover})
+    def add_rover(self, rover: Rover) -> None:
+        self._rovers.append(rover)
+
+    @property
+    def timestamp(self) -> datetime | None:
+        return self._timestamp
+
+    @timestamp.setter
+    @argument_type_validator({"timestamp": (datetime, type(None))})
+    def timestamp(self, timestamp: datetime | None) -> None:
+        self._timestamp = timestamp
