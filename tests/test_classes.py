@@ -29,6 +29,25 @@ def test_plateau_repr_formats_correctly(plateau_class_instance):
     assert repr(plateau_class_instance) == expected_result
 
 
+def test_plateau_eq_returns_true_if_attributes_are_identical_to_another_instance():
+    plateau_1 = Plateau(5, 5)
+    plateau_2 = Plateau(5, 5)
+
+    assert plateau_1 == plateau_2
+    assert plateau_1 is not plateau_2
+
+
+@pytest.mark.parametrize(
+    "comparison_plateau", [Plateau(4, 5), Plateau(5, 4), Plateau(4, 4)]
+)
+def test_plateau_eq_returns_false_if_attributes_are_not_identical_to_another_instance(
+    comparison_plateau,
+):
+    plateau = Plateau(5, 5)
+
+    assert plateau != comparison_plateau
+
+
 @pytest.mark.parametrize("max_x", [-1, 0])
 def test_plateau_init_raises_invalidplateauerror_with_non_positive_max_x_values(max_x):
     with pytest.raises(

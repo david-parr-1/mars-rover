@@ -108,6 +108,14 @@ class Plateau:
 
         return str(plateau_dims)
 
+    def __eq__(self, other) -> bool:
+        return (
+            self.min_x == other.min_x
+            and self.max_x == other.max_x
+            and self.min_y == other.min_y
+            and self.max_y == other.max_y
+        )
+
 
 class Position:
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
