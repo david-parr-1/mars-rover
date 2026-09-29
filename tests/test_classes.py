@@ -394,3 +394,36 @@ def test_rover_execute_instructions_does_not_modify_rover_start_position():
 
     assert mock_rover.start_position == Position(1, 2, CompassDirection.NORTH)
     assert mock_rover.latest_position == Position(2, 2, CompassDirection.EAST)
+
+
+def test_rover_eq_returns_true_if_attributes_are_identical(plateau_class_instance):
+    rover_1 = Rover(
+        Position(1, 2, CompassDirection.NORTH), "LMR", plateau_class_instance
+    )
+    rover_2 = Rover(
+        Position(1, 2, CompassDirection.NORTH), "LMR", plateau_class_instance
+    )
+
+    assert rover_1 == rover_2
+    assert rover_1 is not rover_2
+
+
+@pytest.mark.parametrize(
+    "comparison_rover",
+    [
+        Rover(Position(2, 2, CompassDirection.NORTH), "LMR", Plateau(5, 5)),
+        Rover(Position(1, 3, CompassDirection.NORTH), "LMR", Plateau(5, 5)),
+        Rover(Position(1, 2, CompassDirection.EAST), "LMR", Plateau(5, 5)),
+        Rover(Position(1, 2, CompassDirection.NORTH), "LMRM", Plateau(5, 5)),
+        Rover(
+            Position(1, 2, CompassDirection.NORTH),
+            "LMR",
+            Plateau(5, 5),
+            rover_type=RoverType.CARGO,
+        ),
+    ],
+)
+def test_rover_eq_returns_false_if_attributes_are_not_identical(comparison_rover):
+    rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", Plateau(4, 5))
+
+    assert rover != comparison_rover

@@ -221,7 +221,7 @@ class Rover:
                 f"Rover start_position is: {start_position}"
             )
 
-        self.start_position = start_position
+        self.start_position = deepcopy(start_position)
         self.latest_position = deepcopy(start_position)
         self.instructions = instructions
         self.rover_type = rover_type
@@ -342,3 +342,11 @@ class Rover:
         )
 
         return self.latest_position
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.start_position == other.start_position
+            and self.latest_position == other.latest_position
+            and self.instructions == other.instructions
+            and self.rover_type == other.rover_type
+        )
