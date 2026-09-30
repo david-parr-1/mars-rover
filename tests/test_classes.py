@@ -66,6 +66,14 @@ def test_plateau_init_raises_invalidplateauerror_with_non_positive_max_y_values(
         Plateau(1, max_y)
 
 
+def test_plateau_to_dict_returns_dict_in_expected_format(plateau_class_instance):
+    expected_result = {"min_x": 0, "max_x": 1, "min_y": 0, "max_y": 2}
+
+    result = plateau_class_instance.to_dict()
+
+    assert result == expected_result
+
+
 def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.x == 1, (
         "Position() class initialissed with incorrect x value"
@@ -120,6 +128,14 @@ def test_position_returns_false_if_attributes_not_eq_to_another_position_instanc
 def test_position_repr_formats_correctly(position_class_instance):
     expected_result = "{{x: 1, y: 2, direction: CompassDirection.NORTH}}".format()
     assert repr(position_class_instance) == expected_result
+
+
+def test_position_to_dict_returns_dict_in_expected_format(position_class_instance):
+    expected_result = {"x": 1, "y": 2, "direction": "N"}
+
+    result = position_class_instance.to_dict()
+
+    assert result == expected_result
 
 
 def test_rover_init_with_instructions_string_returns_expected_values(
@@ -429,6 +445,31 @@ def test_rover_eq_returns_false_if_attributes_are_not_identical(comparison_rover
     rover = Rover(Position(1, 2, CompassDirection.NORTH), "LMR", Plateau(4, 5))
 
     assert rover != comparison_rover
+
+
+def test_rover_instructions_to_string_returns_expected_value(
+    rover_class_instance_with_list_of_instructions,
+):
+    expected_result = "LMR"
+
+    result = rover_class_instance_with_list_of_instructions.instructions_to_string()
+
+    assert result == expected_result
+
+
+def test_rover_to_dict_returns_dict_in_expected_format(
+    rover_class_instance_with_list_of_instructions,
+):
+    expected_result = {
+        "start_position": {"x": 1, "y": 2, "direction": "N"},
+        "latest_position": {"x": 1, "y": 2, "direction": "N"},
+        "instructions": "LMR",
+        "rover_type": "S",
+    }
+
+    result = rover_class_instance_with_list_of_instructions.to_dict()
+
+    assert result == expected_result
 
 
 def test_mission_init_sets_expected_default_values():

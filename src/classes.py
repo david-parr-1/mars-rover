@@ -1,5 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
+from typing import Any
 
 from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
@@ -117,6 +118,14 @@ class Plateau:
             and self.max_y == other.max_y
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "min_x": self.min_x,
+            "max_x": self.max_x,
+            "min_y": self.min_y,
+            "max_y": self.max_y,
+        }
+
 
 class Position:
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
@@ -190,6 +199,9 @@ class Position:
 
     def __repr__(self) -> str:
         return f"{{x: {self.x}, y: {self.y}, direction: {self.direction}}}"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"x": self.x, "y": self.y, "direction": self.direction.value}
 
 
 class Rover:
@@ -352,6 +364,18 @@ class Rover:
             and self.rover_type == other.rover_type
         )
 
+    def instructions_to_string(self) -> str:
+        instructions_to_char = [instruction.value for instruction in self.instructions]
+        return "".join(instructions_to_char)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "start_position": self.start_position.to_dict(),
+            "latest_position": self.latest_position.to_dict(),
+            "instructions": self.instructions_to_string(),
+            "rover_type": self.rover_type.value,
+        }
+
 
 class Mission:
     def __init__(
@@ -396,3 +420,14 @@ class Mission:
     @argument_type_validator({"timestamp": (datetime, type(None))})
     def timestamp(self, timestamp: datetime | None) -> None:
         self._timestamp = timestamp
+
+    def to_dict(self) -> dict[str, Any]:
+        rovers = [rover.to_dict() for rover in self.rovers]
+        if self.timestamp:
+            timestamp = self.timestamp.isoformat()
+        else:
+            timestamp = None
+
+        x = {"plateau": self._plateau, "rovers": rovers, "timestamp": timestamp}
+
+        return x
