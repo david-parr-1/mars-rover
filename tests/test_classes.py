@@ -525,3 +525,28 @@ def test_mission_add_rover_adds_rover_to_non_empty_list(
     mission.add_rover(cargo_rover_class_instance)
 
     assert mission.rovers == expected_result
+
+
+def test_mission_to_dict_returns_dict_in_expected_format(mission_instance):
+    expected_result = {
+        "plateau": {"min_x": 0, "max_x": 8, "min_y": 0, "max_y": 8},
+        "rovers": [
+            {
+                "start_position": {"x": 1, "y": 2, "direction": "N"},
+                "latest_position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": "LMR",
+                "rover_type": "S",
+            },
+            {
+                "start_position": {"x": 1, "y": 2, "direction": "N"},
+                "latest_position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": "LMR",
+                "rover_type": "C",
+            },
+        ],
+        "timestamp": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc).isoformat(),
+    }
+
+    result = mission_instance.to_dict()
+
+    assert result == expected_result

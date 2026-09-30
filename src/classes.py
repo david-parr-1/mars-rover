@@ -422,12 +422,8 @@ class Mission:
         self._timestamp = timestamp
 
     def to_dict(self) -> dict[str, Any]:
+        plateau = self.plateau.to_dict() if self.plateau else None
         rovers = [rover.to_dict() for rover in self.rovers]
-        if self.timestamp:
-            timestamp = self.timestamp.isoformat()
-        else:
-            timestamp = None
+        timestamp = self.timestamp.isoformat() if self.timestamp else None
 
-        x = {"plateau": self._plateau, "rovers": rovers, "timestamp": timestamp}
-
-        return x
+        return {"plateau": plateau, "rovers": rovers, "timestamp": timestamp}
