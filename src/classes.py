@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
@@ -6,6 +7,7 @@ from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
+    LoadFromDictError,
 )
 from src.input_layer import argument_type_validator, parse_instructions
 from src.logic_layer import MOVEMENT_SPEED, MOVEMENTS, ROTATIONS, get_logger
@@ -126,6 +128,21 @@ class Plateau:
             "max_y": self.max_y,
         }
 
+    @classmethod
+    @argument_type_validator({"parameters": dict})
+    def from_dict(cls, parameters: dict[str, int]) -> "Plateau":
+        reqd_keys = ["max_x", "max_y"]
+        for reqd_key in reqd_keys:
+            if reqd_key not in parameters:
+                err_msg = (
+                    f"The parameters dictionary passed to Plateau.from_dict() "
+                    f"is missing the {reqd_key} parameter"
+                )
+                logger.error(err_msg)
+                raise LoadFromDictError(err_msg)
+
+        return cls(parameters["max_x"], parameters["max_y"])
+
 
 class Position:
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
@@ -203,6 +220,23 @@ class Position:
     def to_dict(self) -> dict[str, Any]:
         return {"x": self.x, "y": self.y, "direction": self.direction.value}
 
+    @classmethod
+    @argument_type_validator({"parameters": dict})
+    def from_dict(cls, parameters: dict[str, Any]) -> "Position":
+        reqd_keys = ["x", "y", "direction"]
+        for reqd_key in reqd_keys:
+            if reqd_key not in parameters:
+                err_msg = (
+                    f"The parameters dictionary passed to Position.from_dict() "
+                    f"is missing the {reqd_key} parameter"
+                )
+                logger.error(err_msg)
+                raise LoadFromDictError(err_msg)
+
+        return cls(
+            parameters["x"], parameters["y"], CompassDirection(parameters["direction"])
+        )
+
 
 class Rover:
     def __init__(
@@ -211,6 +245,7 @@ class Rover:
         instructions: str | list[Instruction],
         plateau: Plateau,
         rover_type: RoverType = RoverType.SCIENCE,
+        latest_position: Position | None = None,
     ) -> None:
         logger.info("Initialising rover...")
 
@@ -235,7 +270,13 @@ class Rover:
             )
 
         self.start_position = deepcopy(start_position)
-        self.latest_position = deepcopy(start_position)
+        # self.latest_position should be set to the value of the latest_position argument
+        # if one has been provided e.g. by attempting to load a Rover using the
+        # Rover.from_dict() class method. Where no latest position is passed as an
+        # argument it should default to the start position.
+        self.latest_position = (
+            deepcopy(latest_position) if latest_position else deepcopy(start_position)
+        )
         self.instructions = instructions
         self.rover_type = rover_type
         logger.info(
@@ -376,6 +417,30 @@ class Rover:
             "rover_type": self.rover_type.value,
         }
 
+    @classmethod
+    @argument_type_validator({"parameters": dict, "plateau": Plateau})
+    def from_dict(cls, parameters: dict[str, Any], plateau: Plateau) -> "Rover":
+        reqd_keys = {"start_position", "latest_position", "instructions", "rover_type"}
+        for reqd_key in reqd_keys:
+            if reqd_key not in parameters:
+                err_msg = (
+                    f"The parameters dictionary passed to Rover.from_dict() "
+                    f"is missing the {reqd_key} parameter"
+                )
+                logger.error(err_msg)
+                raise LoadFromDictError(err_msg)
+
+        return Rover(
+            Position.from_dict(parameters["start_position"]),
+            parse_instructions(parameters["instructions"]),
+            plateau,
+            RoverType(parameters["rover_type"]),
+            Position.from_dict(parameters["latest_position"]),
+        )
+
+    def __repr__(self) -> str:
+        return json.dumps(self.to_dict())
+
 
 class Mission:
     def __init__(
@@ -427,3 +492,31 @@ class Mission:
         timestamp = self.timestamp.isoformat() if self.timestamp else None
 
         return {"plateau": plateau, "rovers": rovers, "timestamp": timestamp}
+
+    @classmethod
+    @argument_type_validator({"parameters": dict})
+    def from_dict(cls, parameters: dict) -> "Mission":
+        reqd_keys = {"plateau", "rovers", "timestamp"}
+        for reqd_key in reqd_keys:
+            if reqd_key not in parameters:
+                err_msg = (
+                    f"The parameters dictionary passed to Mission.from_dict() "
+                    f"is missing the {reqd_key} parameter"
+                )
+                logger.error(err_msg)
+                raise LoadFromDictError(err_msg)
+
+        plateau = Plateau.from_dict(parameters["plateau"])
+        rovers = [Rover.from_dict(rover, plateau) for rover in parameters["rovers"]]
+        timestamp = datetime.fromisoformat(parameters["timestamp"])
+        return Mission(plateau, rovers, timestamp)
+
+    def __repr__(self) -> str:
+        return json.dumps(self.to_dict())
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.plateau == other.plateau
+            and self.rovers == other.rovers
+            and self.timestamp == other.timestamp
+        )

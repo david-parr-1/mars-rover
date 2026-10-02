@@ -20,3 +20,9 @@ class InvalidPlateauError(MissionError):
     """
     Raised when malformed plateau dimensions are processed.
     """
+
+
+class LoadFromDictError(MissionError):
+    """
+    Raised when attempting to use a class `.from_dict()` method to initialise a class from a malformed dictionary.
+    """

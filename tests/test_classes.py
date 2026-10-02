@@ -7,6 +7,7 @@ from src.custom_enums import CompassDirection, Instruction, RoverType
 from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
+    LoadFromDictError,
 )
 
 
@@ -74,6 +75,36 @@ def test_plateau_to_dict_returns_dict_in_expected_format(plateau_class_instance)
     assert result == expected_result
 
 
+def test_plateau_from_dict_sets_instance_attributes_successfully():
+    parameters = {"max_x": 8, "max_y": 8}
+    expected_result = Plateau(8, 8)
+
+    plateau = Plateau.from_dict(parameters)
+
+    assert plateau == expected_result
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {},
+        {"max_x": 8},
+        {"max_y": 8},
+    ],
+)
+def test_plateau_from_dict_raises_loadfromdicterror_with_missing_parameters(
+    parameters,
+):
+    with pytest.raises(
+        LoadFromDictError,
+        match=(
+            r"^The parameters dictionary passed to Plateau\.from_dict\(\) "
+            "is missing"
+        ),
+    ):
+        Plateau.from_dict(parameters)
+
+
 def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.x == 1, (
         "Position() class initialissed with incorrect x value"
@@ -138,6 +169,40 @@ def test_position_to_dict_returns_dict_in_expected_format(position_class_instanc
     assert result == expected_result
 
 
+def test_position_from_dict_sets_instance_attributes_successfully():
+    parameters = {"x": 1, "y": 2, "direction": "N"}
+    expected_result = Position(1, 2, CompassDirection.NORTH)
+
+    position = Position.from_dict(parameters)
+
+    assert position == expected_result
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {"y": 2, "direction": "N"},
+        {"x": 1, "direction": "N"},
+        {"x": 1, "y": 2},
+        {"x": 1},
+        {"y": 2},
+        {"direction": "N"},
+        {},
+    ],
+)
+def test_position_from_dict_raises_loadfromdicterror_with_missing_parameters(
+    parameters,
+):
+    with pytest.raises(
+        LoadFromDictError,
+        match=(
+            r"^The parameters dictionary passed to Position\.from_dict\(\) "
+            "is missing"
+        ),
+    ):
+        Position.from_dict(parameters)
+
+
 def test_rover_init_with_instructions_string_returns_expected_values(
     rover_class_instance,
 ):
@@ -178,6 +243,17 @@ def test_rover_init_sets_correct_attribute_values_with_cargo_rover_type(
     assert cargo_rover_class_instance.movement_speed == 2
 
 
+def test_rover_init_sets_correct_positions_attributes_when_initialising_with_latest_position_arg(
+    rover_class_instance_with_latest_position_arg,
+):
+    assert rover_class_instance_with_latest_position_arg.start_position == Position(
+        1, 2, CompassDirection.NORTH
+    )
+    assert rover_class_instance_with_latest_position_arg.latest_position == Position(
+        3, 4, CompassDirection.EAST
+    )
+
+
 @pytest.mark.parametrize(
     "plateau,start_position",
     [
@@ -200,6 +276,56 @@ def test_rover_init_raises_invalidpositionerror_with_start_position_outside_plat
         ),
     ):
         Rover(start_position, "LMR", plateau)
+
+
+def test_rover_from_dict_sets_instance_attributes_successfully(rover_as_dict):
+    plateau = Plateau(8, 8)
+    expected_result = Rover(
+        Position(1, 2, CompassDirection.NORTH),
+        [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT],
+        plateau,
+        RoverType.SCIENCE,
+        latest_position=Position(3, 4, CompassDirection.EAST),
+    )
+
+    result = Rover.from_dict(rover_as_dict, plateau)
+
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {
+            "latest_position": {"x": 3, "y": 4, "direction": "E"},
+            "instructions": "LMR",
+            "rover_type": "S",
+        },
+        {
+            "start_position": {"x": 1, "y": 2, "direction": "N"},
+            "instructions": "LMR",
+            "rover_type": "S",
+        },
+        {
+            "start_position": {"x": 1, "y": 2, "direction": "N"},
+            "latest_position": {"x": 3, "y": 4, "direction": "E"},
+            "rover_type": "S",
+        },
+        {
+            "start_position": {"x": 1, "y": 2, "direction": "N"},
+            "latest_position": {"x": 3, "y": 4, "direction": "E"},
+            "instructions": "LMR",
+        },
+    ],
+)
+def test_rover_from_dict_raises_loadfromdict_with_missing_parameters(
+    eight_by_eight_plateau_instance, parameters
+):
+    with pytest.raises(
+        LoadFromDictError,
+        match=(r"^The parameters dictionary passed to Rover\.from_dict\(\) is missing"),
+    ):
+        Rover.from_dict(parameters, eight_by_eight_plateau_instance)
 
 
 @pytest.mark.parametrize(
@@ -550,3 +676,79 @@ def test_mission_to_dict_returns_dict_in_expected_format(mission_instance):
     result = mission_instance.to_dict()
 
     assert result == expected_result
+
+
+def test_mission_eq_returns_true_if_attributes_are_identical(
+    mission_instance, mission_instance_identical
+):
+    assert mission_instance is not mission_instance_identical
+    assert mission_instance == mission_instance_identical
+
+
+@pytest.mark.parametrize(
+    "non_identical_mission_instance",
+    [
+        "mission_instance_different_plateau",
+        "mission_instance_different_rovers",
+        "mission_instance_different_timestamp",
+    ],
+)
+def test_mission_eq_returns_false_if_attributes_are_not_identical(
+    request, mission_instance, non_identical_mission_instance
+):
+    non_identical_mission_instance = request.getfixturevalue(
+        non_identical_mission_instance
+    )
+    assert mission_instance != non_identical_mission_instance
+
+
+def test_mission_from_dict_sets_instance_attributes_successfully(
+    eight_by_eight_plateau_instance, mission_as_dict
+):
+    expected_result = Mission(
+        eight_by_eight_plateau_instance,
+        [
+            Rover(
+                Position(1, 2, CompassDirection.NORTH),
+                [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT],
+                eight_by_eight_plateau_instance,
+                RoverType.SCIENCE,
+                Position(3, 4, CompassDirection.EAST),
+            ),
+            Rover(
+                Position(5, 6, CompassDirection.SOUTH),
+                [Instruction.RIGHT, Instruction.MOVE, Instruction.LEFT],
+                eight_by_eight_plateau_instance,
+                RoverType.CARGO,
+                Position(7, 8, CompassDirection.WEST),
+            ),
+        ],
+        datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    result = Mission.from_dict(mission_as_dict)
+
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "mission_dict_with_missing_parameter",
+    [
+        "mission_as_dict_no_plateau",
+        "mission_as_dict_no_rovers",
+        "mission_as_dict_no_timestamp",
+    ],
+)
+def test_mission_from_dict_raises_loadfromdicterror_with_missing_parameters(
+    request, mission_dict_with_missing_parameter
+):
+    malformed_mission_dict = request.getfixturevalue(
+        mission_dict_with_missing_parameter
+    )
+    with pytest.raises(
+        LoadFromDictError,
+        match=(
+            r"^The parameters dictionary passed to Mission\.from_dict\(\) is missing"
+        ),
+    ):
+        Mission.from_dict(malformed_mission_dict)
