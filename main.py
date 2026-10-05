@@ -1,4 +1,7 @@
-from src.classes import Plateau, Position, Rover
+from datetime import datetime, timezone
+from pathlib import Path
+
+from src.classes import Mission, Plateau, Position, Rover
 from src.exceptions import (
     InvalidInstructionError,
     InvalidPlateauError,
@@ -10,11 +13,13 @@ from src.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def execute_mission(mission: str) -> str | None:
+def execute_mission(
+    mission_text: str, archive_path: Path | str = Path("mission_archive")
+) -> str | None:
     """
     Takes a mission in string format and executes the instructions for each rover the mission contains. If the input string is valid, a string containing each rover's new position after execution of its instruction is returned. If input is invalid, the function aborts and prints the reason to the terminal.
 
-    :param mission: The size of the mission plateau followed by each rover's position
+    :param mission_text: The size of the mission plateau followed by each rover's position
         and the movement instructions it is required to execute.
         The format of the string must be:\n
         "5 5"  # Plateau size x y\n
@@ -22,7 +27,9 @@ def execute_mission(mission: str) -> str | None:
         "LMR"  # Instructions for the first rover to execute\n
         "3 3 E"  # Position of the nth rover\n
         "RML"  # Instructions for the nth rover to execute\n
-    :type mission: str
+    :type mission_text: str
+    :param archive_path: The path to save the mission archive in JSON format.
+    :type archive_path: str or Path
 
     :rtype: str
     :returns: A string containing the final positions of each rover on a new line:
@@ -31,13 +38,14 @@ def execute_mission(mission: str) -> str | None:
         3 2 E C\n
     """
     try:
-        logger.info("Starting mission execution")
-        parsed_mission = parse_mission(mission)
+        mission = Mission()
+        mission.timestamp = datetime.now(timezone.utc)
+        logger.info(f"Starting mission execution at {mission.timestamp}")
+        parsed_mission = parse_mission(mission_text)
         plateau_max_dims = parsed_mission["plateau"]
-        plateau = Plateau(plateau_max_dims["max_x"], plateau_max_dims["max_y"])
+        mission.plateau = Plateau(plateau_max_dims["max_x"], plateau_max_dims["max_y"])
 
         rovers = parsed_mission["rovers"]
-        rover_instances: list[Rover] = []
         for each in rovers:
             rover_start_position = Position(
                 each["position"]["x"],
@@ -46,12 +54,14 @@ def execute_mission(mission: str) -> str | None:
             )
             rover_instructions = each["instructions"]
             rover_type = each["position"]["rover_type"]
-            rover = Rover(rover_start_position, rover_instructions, plateau, rover_type)
-            rover_instances.append(rover)
+            rover = Rover(
+                rover_start_position, rover_instructions, mission.plateau, rover_type
+            )
+            mission.add_rover(rover)
 
         consolidated_output = []
-        for rover in rover_instances:
-            rover.execute_instructions(plateau)
+        for rover in mission.rovers:
+            rover.execute_instructions(mission.plateau)
 
             # This function is require to return the final position of each
             # rover as a string in the below format:
@@ -66,6 +76,9 @@ def execute_mission(mission: str) -> str | None:
                 ]
             )
             consolidated_output.append(str_output)
+
+        # Missions are required to be archived
+        mission.archive(archive_path)
 
         return "\n".join(consolidated_output)
 

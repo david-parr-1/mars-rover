@@ -261,7 +261,7 @@ def mission_as_dict_no_timestamp():
     return mission
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def temp_directory(tmp_path_factory):
     directory = tmp_path_factory.mktemp("test_data")
 
