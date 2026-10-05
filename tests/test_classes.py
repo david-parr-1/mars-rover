@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime, timezone
 
 import pytest
@@ -653,29 +655,13 @@ def test_mission_add_rover_adds_rover_to_non_empty_list(
     assert mission.rovers == expected_result
 
 
-def test_mission_to_dict_returns_dict_in_expected_format(mission_instance):
-    expected_result = {
-        "plateau": {"min_x": 0, "max_x": 8, "min_y": 0, "max_y": 8},
-        "rovers": [
-            {
-                "start_position": {"x": 1, "y": 2, "direction": "N"},
-                "latest_position": {"x": 1, "y": 2, "direction": "N"},
-                "instructions": "LMR",
-                "rover_type": "S",
-            },
-            {
-                "start_position": {"x": 1, "y": 2, "direction": "N"},
-                "latest_position": {"x": 1, "y": 2, "direction": "N"},
-                "instructions": "LMR",
-                "rover_type": "C",
-            },
-        ],
-        "timestamp": datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc).isoformat(),
-    }
+def test_mission_to_dict_returns_dict_in_expected_format(
+    mission_instance, mission_instance_as_dict
+):
 
     result = mission_instance.to_dict()
 
-    assert result == expected_result
+    assert result == mission_instance_as_dict
 
 
 def test_mission_eq_returns_true_if_attributes_are_identical(
@@ -752,3 +738,39 @@ def test_mission_from_dict_raises_loadfromdicterror_with_missing_parameters(
         ),
     ):
         Mission.from_dict(malformed_mission_dict)
+
+
+def test_mission_archive_writes_successfully_to_json_file(
+    mission_instance, mission_instance_as_dict, temp_directory
+):
+    created_path = mission_instance.archive(temp_directory)
+
+    with open(created_path, "r") as file:
+        written_data = json.load(file)
+
+    assert os.path.exists(created_path)
+    assert written_data == mission_instance_as_dict
+
+
+def test_mission_load_from_archive_returns_mission_class_with_correct_attributes(
+    archived_mission, mission_instance
+):
+    expected_result = mission_instance
+
+    result = Mission.load_from_archive(archived_mission)
+
+    assert result == expected_result
+
+
+def test_mission_load_from_archive_prints_message_for_missing_file(monkeypatch, capsys):
+    def raise_file_not_found(*args, **kwargs):
+        raise FileNotFoundError("archive missing")
+
+    with monkeypatch.context() as patch:
+        patch.setattr("builtins.open", raise_file_not_found)
+        result = Mission.load_from_archive("missing.json")
+
+    assert result is None
+    assert capsys.readouterr().out == (
+        "File missing.json could not be found: archive missing\n"
+    )

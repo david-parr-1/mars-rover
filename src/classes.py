@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from src.custom_enums import CompassDirection, Instruction, RoverType
@@ -520,3 +521,36 @@ class Mission:
             and self.rovers == other.rovers
             and self.timestamp == other.timestamp
         )
+
+    @argument_type_validator({"target_directory": (str, Path)})
+    def archive(self, target_directory: str | Path) -> Path:
+        directory = (
+            Path(target_directory)
+            if isinstance(target_directory, str)
+            else target_directory
+        )
+
+        timestamp = self.timestamp if self.timestamp else datetime.now(timezone.utc)
+        timestamp_str = timestamp.strftime("%Y-%m-%d %H_%M_%S")
+
+        file_name = f"mission_archive_{timestamp_str}.json"
+
+        target_path = directory / file_name
+
+        with open(target_path, "w") as file:
+            file.write(json.dumps(self.to_dict(), indent=4))
+
+        return target_path
+
+    @classmethod
+    def load_from_archive(cls, path: str | Path) -> "Mission | None":
+        try:
+            with open(path, "r") as file:
+                loaded_data = json.load(file)
+
+            return cls.from_dict(loaded_data)
+
+        except FileNotFoundError as err:
+            err_msg = f"File {path} could not be found: {err}"
+            logger.error(err_msg)
+            print(err_msg)

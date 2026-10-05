@@ -221,3 +221,4 @@ __marimo__/
 misc/
 data/sample.mission
 mars_rover.jsonl
+mission_archive/mission_archive*

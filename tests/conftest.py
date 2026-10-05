@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 import pytest
@@ -96,6 +97,30 @@ def mission_instance(
     )
 
     return mission
+
+
+@pytest.fixture
+def mission_instance_as_dict():
+    mission_dict = {
+        "plateau": {"min_x": 0, "max_x": 8, "min_y": 0, "max_y": 8},
+        "rovers": [
+            {
+                "start_position": {"x": 1, "y": 2, "direction": "N"},
+                "latest_position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": "LMR",
+                "rover_type": "S",
+            },
+            {
+                "start_position": {"x": 1, "y": 2, "direction": "N"},
+                "latest_position": {"x": 1, "y": 2, "direction": "N"},
+                "instructions": "LMR",
+                "rover_type": "C",
+            },
+        ],
+        "timestamp": "2026-01-01T12:00:00+00:00",
+    }
+
+    return mission_dict
 
 
 @pytest.fixture
@@ -234,3 +259,18 @@ def mission_as_dict_no_timestamp():
     }
 
     return mission
+
+
+@pytest.fixture
+def temp_directory(tmp_path_factory):
+    directory = tmp_path_factory.mktemp("test_data")
+
+    return directory
+
+
+@pytest.fixture
+def archived_mission(temp_directory, mission_instance_as_dict):
+    with open(temp_directory / "mock_file.json", "w") as file:
+        file.write(json.dumps(mission_instance_as_dict))
+
+    return temp_directory / "mock_file.json"
