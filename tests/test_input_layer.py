@@ -56,6 +56,15 @@ def test_parse_plateau_raises_invalidplateauerror_for_malformed_input(input):
         parse_plateau(input)
 
 
+@pytest.mark.parametrize("input_str", ["0 1", "1 0", "0 0"])
+def test_parse_plateau_raises_invalidplateauerror_for_values_of_0(input_str):
+    with pytest.raises(
+        InvalidPlateauError,
+        match=(r"^Plateau max_x and max_y values must be greater than 0."),
+    ):
+        parse_plateau(input_str)
+
+
 def test_parse_position_returns_dictionary():
     result = parse_position("1 2 N")
 

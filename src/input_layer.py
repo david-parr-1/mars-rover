@@ -119,7 +119,17 @@ def parse_plateau(text: str) -> dict[str, int]:
 
     values = text.split(" ")
     values_int = [*map(int, values)]
-    return {"max_x": values_int[0], "max_y": values_int[1]}
+    max_x, max_y = values_int
+
+    # Plateau max_x and max_y values must be greater than zero or the Plateau
+    # will only be one dimensional.
+    if max_x <= 0 or max_y <= 0:
+        raise InvalidPlateauError(
+            f"Plateau max_x and max_y values must be greater than 0. Got "
+            f"x: {max_x} | y: {max_y}"
+        )
+
+    return {"max_x": max_x, "max_y": max_y}
 
 
 @argument_type_validator({"text": str})
