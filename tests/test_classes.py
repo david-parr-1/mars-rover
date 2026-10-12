@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
+from unittest.mock import patch
 
 import pytest
 
@@ -107,6 +108,64 @@ def test_plateau_from_dict_raises_loadfromdicterror_with_missing_parameters(
         Plateau.from_dict(parameters)
 
 
+@pytest.mark.parametrize(
+    "user_input, expected_plateau",
+    [("1 1", Plateau(1, 1)), ("99 99", Plateau(99, 99)), ("50 50", Plateau(50, 50))],
+)
+@patch("src.classes.input")
+def test_plateau_from_input_returns_plateau_instance_with_valid_input(
+    mock_user_input, user_input, expected_plateau
+):
+    mock_user_input.return_value = user_input
+
+    plateau = Plateau.from_input()
+
+    assert plateau == expected_plateau
+
+
+@patch("src.classes.input")
+def test_plateau_from_input_returns_none_when_input_is_abort(mock_user_input):
+    mock_user_input.return_value = "abort"
+
+    position = Position.from_input()
+
+    assert position == None
+
+
+@pytest.mark.parametrize(
+    "user_input, error_message",
+    [
+        (
+            "0 0",
+            "Plateau max_x and max_y values must be greater than 0. Got x: 0 | y: 0",
+        ),
+        (
+            "0 1",
+            "Plateau max_x and max_y values must be greater than 0. Got x: 0 | y: 1",
+        ),
+        (
+            "1 0",
+            "Plateau max_x and max_y values must be greater than 0. Got x: 1 | y: 0",
+        ),
+        ("100 1", "Plateau data must be two numbers"),
+        ("1 100", "Plateau data must be two numbers"),
+    ],
+)
+@patch("src.classes.input")
+def test_plateau_from_input_prints_error_and_reprompts(
+    mock_user_input, user_input, error_message, capsys
+):
+    mock_user_input.side_effect = [user_input, "1 1"]
+
+    plateau = Plateau.from_input()
+
+    output = capsys.readouterr().out
+    assert plateau == Plateau(1, 1)
+    assert error_message in output
+    assert "Please try entering the plateau dimensions again" in output
+    assert mock_user_input.call_count == 2
+
+
 def test_position_init_returns_expected_values(position_class_instance):
     assert position_class_instance.x == 1, (
         "Position() class initialissed with incorrect x value"
@@ -203,6 +262,74 @@ def test_position_from_dict_raises_loadfromdicterror_with_missing_parameters(
         ),
     ):
         Position.from_dict(parameters)
+
+
+@patch("src.classes.input")
+def test_position_from_input_returns_position_with_valid_value(mock_user_input):
+    mock_user_input.return_value = "1 2 N"
+    expected_position = Position(1, 2, CompassDirection.NORTH)
+
+    position = Position.from_input()
+
+    assert position == expected_position
+
+
+@patch("src.classes.input")
+def test_position_from_input_returns_none_when_input_is_abort(mock_user_input):
+    mock_user_input.return_value = "abort"
+
+    result = Position.from_input()
+
+    assert result == None
+
+
+@pytest.mark.parametrize(
+    "user_input, expected_position",
+    [
+        ("0 0 N", Position(0, 0, CompassDirection.NORTH)),
+        ("8 8 S", Position(8, 8, CompassDirection.SOUTH)),
+    ],
+)
+@patch("src.classes.input")
+def test_position_from_input_returns_position_with_values_at_plateau_edges(
+    mock_user_input, user_input, expected_position
+):
+    plateau = Plateau(8, 8)
+    mock_user_input.return_value = user_input
+
+    position = Position.from_input(plateau=plateau)
+
+    assert position == expected_position
+
+
+@pytest.mark.parametrize(
+    "user_input, error_message",
+    [
+        (
+            "A 1 N",
+            "Position data must be either",
+        ),
+        (
+            "1 2 F",
+            "Position data must be either",
+        ),
+        ("9 8 N", "Position is not within the bounds of the specified plateau"),
+        ("8 9 N", "Position is not within the bounds of the specified plateau"),
+    ],
+)
+@patch("src.classes.input")
+def test_position_from_input_prints_error_and_reprompts(
+    mock_user_input, user_input, error_message, capsys, eight_by_eight_plateau_instance
+):
+    mock_user_input.side_effect = [user_input, "1 2 N"]
+
+    position = Position.from_input(eight_by_eight_plateau_instance)
+
+    output = capsys.readouterr().out
+    assert position == Position(1, 2, CompassDirection.NORTH)
+    assert error_message in output
+    assert "Please try entering the rover's starting position again" in output
+    assert mock_user_input.call_count == 2
 
 
 def test_rover_init_with_instructions_string_returns_expected_values(
@@ -774,3 +901,35 @@ def test_mission_load_from_archive_prints_message_for_missing_file(monkeypatch, 
     assert capsys.readouterr().out == (
         "File missing.json could not be found: archive missing\n"
     )
+
+
+def test_mission_execute_returns_correct_values_for_single_rover_mission(
+    temp_directory,
+    mission_instance_single_rover,
+):
+    expected_mission_str = "0 2 N S"
+
+    mission_str = mission_instance_single_rover.execute(temp_directory)
+
+    assert mission_str == expected_mission_str
+
+
+def test_mission_execute_returns_correct_values_for_multi_rover_mission(
+    temp_directory,
+    mission_instance,
+):
+    expected_mission_str = "0 2 N S\n1 2 N C"
+
+    mission_str = mission_instance.execute(temp_directory)
+
+    assert mission_str == expected_mission_str
+
+
+def test_mission_execute_raises_filenotfounderror_for_non_existent_archive_file_path(
+    mission_instance,
+):
+    with pytest.raises(
+        FileNotFoundError,
+        match=(r"^The specified path non_existent_path could not be found."),
+    ):
+        mission_instance.execute("non_existent_path")

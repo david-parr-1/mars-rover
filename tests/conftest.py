@@ -124,6 +124,19 @@ def mission_instance_as_dict():
 
 
 @pytest.fixture
+def mission_instance_single_rover(
+    eight_by_eight_plateau_instance, rover_class_instance_with_list_of_instructions
+):
+    mission = Mission(
+        eight_by_eight_plateau_instance,
+        [rover_class_instance_with_list_of_instructions],
+        datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    return mission
+
+
+@pytest.fixture
 def mission_instance_identical(
     eight_by_eight_plateau_instance,
     rover_class_instance_with_list_of_instructions,

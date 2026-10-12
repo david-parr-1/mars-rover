@@ -1,4 +1,5 @@
 import json
+import os
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,8 +11,14 @@ from src.exceptions import (
     InvalidPositionError,
     LoadFromDictError,
 )
-from src.input_layer import argument_type_validator, parse_instructions
+from src.input_layer import (
+    argument_type_validator,
+    parse_instructions,
+    parse_plateau,
+    parse_position,
+)
 from src.logic_layer import MOVEMENT_SPEED, MOVEMENTS, ROTATIONS, get_logger
+from src.text_colours import BLUE_BOLD, BOLD, GREEN_BOLD, ORANGE_BOLD, RESET
 
 logger = get_logger(__name__)
 
@@ -66,9 +73,9 @@ class Plateau:
             `InvalidPlateauError` if a value of 0 or less is passed.
         """
         if value <= 0:
-            raise InvalidPlateauError(
-                f"Plateau max_x value must be greater than 0. Got {value}"
-            )
+            err_msg = f"Plateau max_x value must be greater than 0. Got {value}"
+            logger.error(err_msg)
+            raise InvalidPlateauError(err_msg)
 
         self._max_x = value
 
@@ -97,9 +104,9 @@ class Plateau:
             `InvalidPlateauError` if a value of 0 or less is passed.
         """
         if value <= 0:
-            raise InvalidPlateauError(
-                f"Plateau max_y value must be greater than 0. Got {value}"
-            )
+            err_msg = f"Plateau max_y value must be greater than 0. Got {value}"
+            logger.error(err_msg)
+            raise InvalidPlateauError(err_msg)
 
         self._max_y = value
 
@@ -143,6 +150,33 @@ class Plateau:
                 raise LoadFromDictError(err_msg)
 
         return cls(parameters["max_x"], parameters["max_y"])
+
+    @classmethod
+    def from_input(cls) -> "Plateau | None":
+        valid_plateau = False
+        while not valid_plateau:
+            user_input = input(
+                f"To begin processing a mission, enter the maximum x and y dimensions "
+                f"of the mission's plateau as integers separated by a space e.g. 8 8\n\n"
+                f"NOTE:- the value of the x and y dimensions must be greater than 0 and "
+                f"no greater than 99.\n\n"
+                f"{BLUE_BOLD}Enter the mission plateau dimensions: {RESET}"
+            )
+            if user_input == "abort":
+                print("Aborting mission loading...")
+                return None
+            try:
+                plateau_dims = parse_plateau(user_input)
+                max_x, max_y = plateau_dims["max_x"], plateau_dims["max_y"]
+                plateau = cls(max_x, max_y)
+                valid_plateau = True
+                return plateau
+            except InvalidPlateauError as err:
+                print(str(err))
+                print(
+                    "Please try entering the plateau dimensions again or type 'abort' "
+                    "to abort mission processing.\n"
+                )
 
 
 class Position:
@@ -237,6 +271,45 @@ class Position:
         return cls(
             parameters["x"], parameters["y"], CompassDirection(parameters["direction"])
         )
+
+    @classmethod
+    def from_input(cls, plateau: Plateau | None = None) -> "Position | None":
+        valid_position = False
+        while not valid_position:
+            user_input = input(
+                f"\nEnter the starting position of the rover. This must be in the "
+                f"format {ORANGE_BOLD}'1 2 N'{RESET} where:\n"
+                f" - {ORANGE_BOLD}1{RESET} is the x coordinate\n"
+                f" - {ORANGE_BOLD}2{RESET} is the y coordinate\n"
+                f" - {ORANGE_BOLD}N{RESET} is the compass direction the rover is facing (NESW)\n\n"
+                f"{BLUE_BOLD}Enter rover position here: {RESET}"
+            )
+            if user_input == "abort":
+                print("Aborting mission loading...")
+                return None
+            try:
+                starting_position = parse_position(user_input)
+                x, y, direction = (
+                    starting_position["x"],
+                    starting_position["y"],
+                    CompassDirection(starting_position["direction"]),
+                )
+                if plateau is not None and (x > plateau.max_x or y > plateau.max_y):
+                    raise InvalidPositionError(
+                        f"Position is not within the bounds of the specified "
+                        f"plateau.\n"
+                        f"Plateau max_x: {plateau.max_x} | Position x: {x}\n"
+                        f"Plateau max_y: {plateau.max_y} | Position y: {y}"
+                    )
+                position = cls(x, y, direction)
+                return position
+            except InvalidPositionError as err:
+                logger.error(str(err))
+                print(str(err))
+                print(
+                    "\nPlease try entering the rover's starting position again or type "
+                    "'abort' to abort mission processing."
+                )
 
 
 class Rover:
@@ -537,8 +610,18 @@ class Mission:
 
         target_path = directory / file_name
 
+        archive_start_msg = f"\nWriting archive to {target_directory} | Filename: {BOLD}{file_name}{RESET}"
+        logger.info(archive_start_msg)
+        print(archive_start_msg)
         with open(target_path, "w") as file:
             file.write(json.dumps(self.to_dict(), indent=4))
+
+        archive_success_msg = (
+            f"\nArchive written successfully to {target_directory} | "
+            f"Filename: {BOLD}{file_name}{RESET}\n"
+        )
+        logger.info(archive_success_msg)
+        print(archive_success_msg)
 
         return target_path
 
@@ -554,3 +637,47 @@ class Mission:
             err_msg = f"File {path} could not be found: {err}"
             logger.error(err_msg)
             print(err_msg)
+
+    def execute(self, archive_path: str | Path = Path("mission_archive")) -> str:
+        # Validate archive_path exists at the start so that further
+        # execution can be stopped before trying to write to a
+        # non-existent path
+        if not os.path.exists(archive_path):
+            err_msg = (
+                f"The specified path {archive_path} could not be "
+                f"found. Please choose a valid filepath and retry "
+                f"execution."
+            )
+            logger.error(err_msg)
+            raise FileNotFoundError(err_msg)
+
+        execute_begin_msg = "\nBeginning mission execution..."
+        logger.info(execute_begin_msg)
+        print(f"{ORANGE_BOLD}{execute_begin_msg}{RESET}")
+
+        consolidated_output = []
+        for rover in self.rovers:
+            rover.execute_instructions(self.plateau)
+
+            # This function is require to return the final position of each
+            # rover as a string in the below format:
+            # 1 3 N S
+            # 5 1 E C
+            rover_final_pos_str = " ".join(
+                [
+                    str(rover.latest_position.x),
+                    str(rover.latest_position.y),
+                    str(rover.latest_position.direction.value),
+                    str(rover.rover_type.value),
+                ]
+            )
+            consolidated_output.append(rover_final_pos_str)
+
+        execute_success_msg = "\nMission executed successfully..."
+        logger.info(execute_success_msg)
+        print(f"{GREEN_BOLD}{execute_success_msg}{RESET}")
+
+        # Executed missions are required to be written to disk.
+        self.archive(archive_path)
+
+        return "\n".join(consolidated_output)

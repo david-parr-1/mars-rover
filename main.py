@@ -1,3 +1,5 @@
+import os
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -7,19 +9,27 @@ from src.exceptions import (
     InvalidPlateauError,
     InvalidPositionError,
 )
-from src.input_layer import parse_mission
+from src.input_layer import (
+    parse_mission,
+    validate_instructions_from_input,
+    validate_rover_type_from_input,
+)
 from src.logging_config import get_logger
+from src.text_colours import BLUE_BOLD, BOLD, GREEN_BOLD, ORANGE_BOLD, RESET
 
 logger = get_logger(__name__)
 
 
 def execute_mission(
-    mission_text: str, archive_path: Path | str = Path("mission_archive")
+    mission_to_execute: str | Mission,
+    archive_path: Path | str = Path("mission_archive"),
 ) -> str | None:
     """
     Takes a mission in string format and executes the instructions for each rover the mission contains. If the input string is valid, a string containing each rover's new position after execution of its instruction is returned. If input is invalid, the function aborts and prints the reason to the terminal.
 
-    :param mission_text: The size of the mission plateau followed by each rover's position
+    :param mission: Can be an instance of the Mission class or a text string.\n
+        If a text string, the text must follow this format:\n
+        The size of the mission plateau followed by each rover's position
         and the movement instructions it is required to execute.
         The format of the string must be:\n
         "5 5"  # Plateau size x y\n
@@ -27,7 +37,7 @@ def execute_mission(
         "LMR"  # Instructions for the first rover to execute\n
         "3 3 E"  # Position of the nth rover\n
         "RML"  # Instructions for the nth rover to execute\n
-    :type mission_text: str
+    :type mission: str | Mission
     :param archive_path: The path to save the mission archive in JSON format.
     :type archive_path: str or Path
 
@@ -37,51 +47,116 @@ def execute_mission(
         0 2 N S\n
         3 2 E C\n
     """
-    try:
-        mission = Mission()
-        mission.timestamp = datetime.now(timezone.utc)
-        logger.info(f"Starting mission execution at {mission.timestamp}")
-        parsed_mission = parse_mission(mission_text)
-        plateau_max_dims = parsed_mission["plateau"]
-        mission.plateau = Plateau(plateau_max_dims["max_x"], plateau_max_dims["max_y"])
+    if not os.path.exists(archive_path):
+        err_msg = (
+            f"The specified path {archive_path} could not be "
+            f"found. Please choose a valid filepath and retry "
+            f"execution."
+        )
+        logger.error(err_msg)
+        print(err_msg)
+        return
 
-        rovers = parsed_mission["rovers"]
-        for each in rovers:
-            rover_start_position = Position(
-                each["position"]["x"],
-                each["position"]["y"],
-                each["position"]["direction"],
+    if isinstance(mission_to_execute, Mission):
+        mission = deepcopy(mission_to_execute)
+    else:
+        try:
+            mission = Mission()
+            mission.timestamp = datetime.now(timezone.utc)
+            logger.info(f"Starting mission execution at {mission.timestamp}")
+            parsed_mission = parse_mission(mission_to_execute)
+            plateau_max_dims = parsed_mission["plateau"]
+            mission.plateau = Plateau(
+                plateau_max_dims["max_x"], plateau_max_dims["max_y"]
             )
-            rover_instructions = each["instructions"]
-            rover_type = each["position"]["rover_type"]
-            rover = Rover(
-                rover_start_position, rover_instructions, mission.plateau, rover_type
-            )
-            mission.add_rover(rover)
 
-        consolidated_output = []
-        for rover in mission.rovers:
-            rover.execute_instructions(mission.plateau)
+            rovers = parsed_mission["rovers"]
+            for each in rovers:
+                rover_start_position = Position(
+                    each["position"]["x"],
+                    each["position"]["y"],
+                    each["position"]["direction"],
+                )
+                rover_instructions = each["instructions"]
+                rover_type = each["position"]["rover_type"]
+                rover = Rover(
+                    rover_start_position,
+                    rover_instructions,
+                    mission.plateau,
+                    rover_type,
+                )
+                mission.add_rover(rover)
 
-            # This function is require to return the final position of each
-            # rover as a string in the below format:
-            # 1 3 N S
-            # 5 1 E C
-            str_output = " ".join(
-                [
-                    str(rover.latest_position.x),
-                    str(rover.latest_position.y),
-                    str(rover.latest_position.direction.value),
-                    str(rover.rover_type.value),
-                ]
-            )
-            consolidated_output.append(str_output)
+        except (
+            InvalidPlateauError,
+            InvalidPositionError,
+            InvalidInstructionError,
+        ) as err:
+            logger.error(f"Mission execution aborted: {err}")
+            print(f"Mission execution aborted: {err}")
 
-        # Missions are required to be archived
-        mission.archive(archive_path)
+    # Execute mission
+    mission_str = mission.execute(archive_path)
+    return mission_str
 
-        return "\n".join(consolidated_output)
 
-    except (InvalidPlateauError, InvalidPositionError, InvalidInstructionError) as err:
-        logger.error(f"Mission execution aborted: {err}")
-        print(f"Mission execution aborted: {err}")
+def mission_cli() -> str | None:
+    mission = Mission()
+    plateau = Plateau.from_input()
+
+    # Plateau.from_input() returns None if the user entered 'abort'
+    # so mission processing should stop.
+    if plateau is None:
+        print(f"{BOLD}Mission loading aborted.{RESET}")
+        return None
+
+    mission.plateau = plateau
+
+    # Add rovers
+
+    rovers_completed = False
+    while not rovers_completed:
+        rover_count = len(mission.rovers)
+        print(
+            f"\nThere are {rover_count} rovers so far. Enter details of "
+            f"rover number {rover_count + 1}...\n"
+        )
+        rover_type = validate_rover_type_from_input()
+        if rover_type is None:
+            print(f"{BOLD}Mission loading aborted.{RESET}")
+            return None
+
+        start_position = Position.from_input(plateau=mission.plateau)
+        if start_position is None:
+            print(f"{BOLD}Mission loading aborted.{RESET}")
+            return None
+
+        instructions = validate_instructions_from_input()
+        if instructions is None:
+            print(f"{BOLD}Mission loading aborted.{RESET}")
+            return None
+
+        rover = Rover(
+            start_position, instructions, mission.plateau, rover_type=rover_type
+        )
+        mission.add_rover(rover)
+
+        another_rover = input(
+            f"\n{GREEN_BOLD}Rover added to mission successfully.{RESET}\n\n"
+            f"Enter {ORANGE_BOLD}'yes'{RESET} to add another "
+            f"rover to the mission or enter {ORANGE_BOLD}'no'{RESET} to execute "
+            f"the mission.\n\n"
+            f"{BLUE_BOLD}Enter 'yes' or 'no': {RESET}"
+        )
+        if another_rover.lower() == "no":
+            rovers_completed = True
+
+    mission.timestamp = datetime.now(timezone.utc)
+
+    mission_str = mission.execute()
+
+    return mission_str
+
+
+if __name__ == "__main__":
+    mission_cli()

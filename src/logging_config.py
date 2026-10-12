@@ -1,6 +1,9 @@
 import json
 import logging
+import os
 import sys
+
+from dotenv import load_dotenv
 
 
 class JSONFormatter(logging.Formatter):
@@ -19,8 +22,9 @@ class JSONFormatter(logging.Formatter):
 
 
 def configure_logging() -> None:
+    load_dotenv()
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(os.getenv("MARS_ROVER_LOGGING_LEVEL", "INFO"))
 
     if root_logger.handlers:
         return

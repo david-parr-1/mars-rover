@@ -16,6 +16,8 @@ from src.input_layer import (
     parse_mission,
     parse_plateau,
     parse_position,
+    validate_instructions_from_input,
+    validate_rover_type_from_input,
 )
 
 
@@ -431,3 +433,77 @@ def test_argument_type_validator_accepts_argument_with_multiple_valid_data_types
     result = dummy_function("test", argument)
 
     assert result == "Name: test | Count: 123"
+
+
+@pytest.mark.parametrize(
+    "value, expected_rover_type", [("S", RoverType.SCIENCE), ("C", RoverType.CARGO)]
+)
+@patch("src.input_layer.input")
+def test_validate_rover_type_from_input_returns_correct_rovertype_when_from_valid_input(
+    mock_user_input, value, expected_rover_type
+):
+    mock_user_input.return_value = value
+    rover_type = validate_rover_type_from_input()
+
+    assert rover_type == expected_rover_type
+
+
+@patch("src.input_layer.input")
+def test_validate_rover_type_from_input_returns_none_when_input_is_abort(
+    mock_user_input,
+):
+    mock_user_input.return_value = "abort"
+    rover_type = validate_rover_type_from_input()
+
+    assert rover_type is None
+
+
+@patch("src.input_layer.input")
+def test_validate_rover_type_from_input_prints_error_and_prompts_with_invalid_input(
+    mock_user_input, capsys
+):
+    mock_user_input.side_effect = ["A", "S"]
+
+    rover_type = validate_rover_type_from_input()
+
+    output = capsys.readouterr().out
+    assert rover_type == RoverType.SCIENCE
+    assert "is not a valid RoverType" in output
+    assert "Please try entering the rover type again" in output
+    assert mock_user_input.call_count == 2
+
+
+@patch("src.input_layer.input")
+def test_validate_instructions_from_input_returns_correct_list_of_instructions_from_valid_input(
+    mock_user_input,
+):
+    mock_user_input.return_value = "LMR"
+    expected_instructions = [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
+    instructions = validate_instructions_from_input()
+
+    assert instructions == expected_instructions
+
+
+@patch("src.input_layer.input")
+def test_validate_instructions_from_input_returns_none_when_input_is_abort(
+    mock_user_input,
+):
+    mock_user_input.return_value = "abort"
+    instructions = validate_instructions_from_input()
+
+    assert instructions is None
+
+
+@patch("src.input_layer.input")
+def test_validate_instructions_from_input_prints_error_and_prompts_with_invalid_input(
+    mock_user_input, capsys
+):
+    mock_user_input.side_effect = ["LMRN", "LMR"]
+
+    instructions = validate_instructions_from_input()
+
+    output = capsys.readouterr().out
+    assert instructions == [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
+    assert "Instructions must be a string with no spaces" in output
+    assert "Please try entering the instructions again" in output
+    assert mock_user_input.call_count == 2

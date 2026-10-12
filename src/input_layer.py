@@ -12,6 +12,7 @@ from src.exceptions import (
     InvalidPositionError,
 )
 from src.logging_config import get_logger
+from src.text_colours import BLUE_BOLD, ORANGE_BOLD, RED_BOLD, RESET
 
 logger = get_logger(__name__)
 
@@ -113,8 +114,8 @@ def parse_plateau(text: str) -> dict[str, int]:
     regex = re.compile(valid_format)
     if regex.fullmatch(text) == None:
         raise InvalidPlateauError(
-            f"Plateau data must be two numbers of two digits max with a single space "
-            f"between them in the format 'x y'. Got {text}"
+            f"\n{RED_BOLD}ERROR:{RESET} Plateau data must be two numbers of two digits max with a "
+            f"single space between them in the format 'x y'. Got {text}\n"
         )
 
     values = text.split(" ")
@@ -161,7 +162,7 @@ def parse_position(text: str) -> dict[str, int | CompassDirection | RoverType]:
     regex = re.compile(valid_format)
     if regex.fullmatch(text_cleaned) == None:
         raise InvalidPositionError(
-            f"\nPosition data must be either:\n"
+            f"\n{RED_BOLD}ERROR:{RESET} Position data must be either:\n"
             f"  - Two numbers of two digits max and a direction value of N, E, "
             f"S or W with a single space between each value e.g. '1 2 E' or;\n"
             f"  - Two numbers of two digits max, a direction value of N, E, "
@@ -202,15 +203,6 @@ def parse_instructions(text: str) -> list[Instruction]:
         A list containing each instruction as an instance of the Instruction enum class.
         e.g. "LMR" input would return [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
     """
-    # valid_format = r"^[LMR]+$"
-    # regex = re.compile(valid_format)
-    # if regex.fullmatch(text) == None:
-    #     raise InvalidInstructionError(
-    #         f"Instructions data must be a single continuous string comprising only "
-    #         f"the character 'L' for rotate left, 'R' for rotate right or 'M' for move "
-    #         f"forward one space. Got {text}"
-    #     )
-
     try:
         instruction_list = [Instruction(char) for char in text]
         return instruction_list
@@ -309,3 +301,66 @@ def load_mission_from_file(path: str | Path) -> str:
         mission_text = file.read()
 
     return mission_text
+
+
+def validate_rover_type_from_input() -> RoverType | None:
+    valid_rover_type = False
+    while not valid_rover_type:
+        user_input = input(
+            f"Select the type of rover to add to the mission. Enter "
+            f"{ORANGE_BOLD}'S'{RESET} for a science rover or "
+            f"{ORANGE_BOLD}'C'{RESET} for a cargo rover.\n\n"
+            f"{BLUE_BOLD}Enter rover type here: {RESET}"
+        )
+        # Return None if the user enters 'abort' so that the mission
+        # execution can be cancelled on return of None.
+        if user_input == "abort":
+            print("Aborting mission loading...")
+            return None
+        try:
+            rover_type = RoverType(user_input)
+            valid_rover_type = True
+            return rover_type
+        except ValueError as err:
+            logger.error(err)
+            print("".join(["\n", f"{RED_BOLD}ERROR: {RESET}", str(err)]))
+            print(
+                f"The rover type value must be {ORANGE_BOLD}'S'{RESET} or "
+                f"{ORANGE_BOLD}'C'{RESET}. Got {user_input}\n"
+                f"Please try entering the rover type again or entering 'abort' "
+                f"to abort mission loading."
+            )
+
+
+def validate_instructions_from_input() -> list[Instruction] | None:
+    valid_instructions = False
+    while not valid_instructions:
+        user_input = input(
+            f"Enter the instructions that the rover is to follow as a string "
+            f"of characters with no spaces e.g. {ORANGE_BOLD}'MMLMMR'{RESET}.\n"
+            f"Use {ORANGE_BOLD}'L'{RESET} to rotate the rover left by 90 deg.\n"
+            f"Use {ORANGE_BOLD}'R'{RESET} to rotate the rover right by 90 deg.\n"
+            f"Use {ORANGE_BOLD}'M'{RESET} to move the rover forward by the number of positions "
+            f"according to the rover's type ie. 1 position for a science rover, "
+            f"2 positions for a cargo rover.\n\n"
+            f"{BLUE_BOLD}Enter instructions here: {RESET}"
+        )
+        # Return None if the user enters 'abort' so that the mission
+        # execution can be cancelled on return of None.
+        if user_input == "abort":
+            print("Aborting mission loading...")
+            return None
+        try:
+            instructions = parse_instructions(user_input)
+            valid_instructions = True
+            return instructions
+        except InvalidInstructionError as err:
+            logger.error(err)
+            print("".join(["\n", f"{RED_BOLD}ERROR: {RESET}", str(err)]))
+            print(
+                f"Instructions must be a string with no spaces "
+                f"and contain only the characters L, M, or R. Got "
+                f"{user_input}\n"
+                f"Please try entering the instructions again or "
+                f"entering 'abort' to abort mission loading."
+            )
