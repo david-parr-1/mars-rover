@@ -39,25 +39,20 @@ def rotate(
     position: dict[str, int | CompassDirection], instruction: Instruction
 ) -> dict[str, int | CompassDirection]:
     """
-    Takes a rover's position dictionary and returns a new dictionary with the direction value
-    updated in accordance with the instruction argument passed
+    Take a rover's position dictionary and rotate its direction by 90degs.
 
     Args:
-        `position`: A rover's position dictionary in the format:
-        ```
-        {
-            "x": 1,
-            "y": 2,
-            "direction": "N"
-        }
-        ```
-
-        `instruction`: A instruction enum class object representing the direction in which the
-        rover is to be turned e.g. Instruction.LEFT or Instruction.RIGHT
+        position: A dictionary of a rover's position.
+        instruction: The direction in which the rover will rotate.
 
     Returns:
-        A new dictionary in the same format as the input but with the direction value updated
-        to the new value after rotation
+        A new dictionary in the same format as the input but with the direction
+        value updated to the new value after rotation
+
+    Examples:
+        >>> rover_position = {'x': 1, 'y': 2, 'direction': CompassDirection.NORTH}
+        >>> rotate(rover_position, Instruction.RIGHT)
+        {'x': 1, 'y': 2, 'direction': CompassDirection.EAST}
     """
     start_direction = position["direction"]
     if not isinstance(start_direction, CompassDirection):
@@ -79,31 +74,40 @@ def move(
     position: dict[str, int | CompassDirection], plateau: dict[str, int]
 ) -> dict[str, CompassDirection | int]:
     """
-    Takes a rover's position dictionary along with a mission plateau dictionary and
-    calculates the rover's new position on the map by moving it one place in the direction
-    that it is facing as defined by the `direction` key value in the rover's position
-    dictionary. NOTE:- if the move would take the rover outside of either the maximum x
-    or maximum y values of the passed plateau dictionary, the function will not updated
-    the rover's position values and returned unchanged x and y positions.
+    Take a rover's position dictionary and move it once in the direction it is facing.
+
+    If the move would take the rover outside of either the maximum x or maximum y
+    values of the passed plateau dictionary, the function will not updated the
+    rover's position values and returned unchanged x and y positions.
 
     Args:
-        `position`: A rover's position dictionary in the format:
-        ```
-        {
-            "x": 1,
-            "y": 2,
-            "direction": CompassDirection()
-        }
-        ```
-
-        `plateau`: A dictionary containing the maximum x and y value of the mission map.
-        Format example: `{"max_x": 5, "max_y": 5}`
+        position: A dictionary of a rover's position.
+        plateau: A dictionary of the mission plateau's `max_x` and `max_y` values.
 
     Returns:
-        If the rover's move does not move it beyond the maximum x and y values of the mission plateau,
-        returns a new dictionary in the same format as the input but with the x or y values updated
-        to the new values after rotation. If the rover's move does move it beyond the maximum x or
-        y values of the mission plateau, a dictionary is returned with unchanged x and y values.
+        A new dictionary of the rover's updated position in the same format as the
+            input dictionary. If the rover's move would have taken the rover beyond
+            the bounds of the mission plateau, a new dictionary is returned with
+            the rover's position unchanged.
+
+    Examples:
+        **Move the rover once to the North.**
+        >>> rover_position = {'x': 1, 'y': 2, 'direction': CompassDirection.NORTH}
+        >>> plateau = {'max_x': 5, 'max_y': 5}
+        >>> move(rover_position, plateau)
+        {'x': 1, 'y': 3, 'direction': CompassDirection.NORTH}
+
+        **Move the rover once to the East**
+        >>> rover_position = {'x': 1, 'y': 2, 'direction': CompassDirection.EAST}
+        >>> plateau = {'max_x': 5, 'max_y': 5}
+        >>> move(rover_position, plateau)
+        {'x': 2, 'y': 2, 'direction': CompassDirection.EAST}
+
+        **Attempt to move the rover beyond the plateau bounds**
+        >>> rover_position = {'x': 5, 'y': 5, 'direction': CompassDirection.EAST}
+        >>> plateau = {'max_x': 5, 'max_y': 5}
+        >>> move(rover_position, plateau)
+        {'x': 5, 'y': 5, 'direction': CompassDirection.EAST}
     """
     if not isinstance(position["x"], int):
         logger.error(
@@ -154,30 +158,27 @@ def execute_instructions(
     plateau: dict[str, int],
 ) -> dict[str, CompassDirection | int]:
     """
-    Takes a rover's starting position, a list of instructions and a plateau dictionary and processes
-    the instructions to return an updated position dictionary.
+    Execute a list of instructions in turn for a rover and return a new position.
+
+    The position is returned as a new dictionary.
 
     Args:
-        `position`: A rover's position dictionary in the format:
-        ```
-        {
-            "x": 1,
-            "y": 2,
-            "direction": CompassDirection()
-        }
-        ```
-
-        `instructions`: A list of Instruction enum class instances representing the instructions that
-        the rover is to follow to reach its final position. `Instruction.LEFT` and `Instruction.RIGHT` rotate
-        the rover left or right respectively. `Instruction.MOVE` moves the rover forward one space in the
-        direction defined by the value of the `direction` key within its `position` dictionary.
-
-        `plateau`: A dictionary containing the maximum x and y value of the mission map.
-        Format example: `{"max_x": 5, "max_y": 5}`
+        position: A dictionary of a rover's position.
+        instructions: A list of members of the Instruction enum. Each element of
+            list is a navigational instruction to be carried out by the rover.
+        plateau: A dictionary containing the maximum x and y value of the mission
+            map. Format example: `{"max_x": 5, "max_y": 5}`
 
     Returns:
         A dictionary representing the rover's final position once all instructions have been
         processed.
+
+    Examples:
+        >>> rover_position = {'x': 1, 'y': 2, 'direction': CompassDirection.NORTH}
+        >>> instructions = [Instruction.MOVE, Instruction.RIGHT, Instruction.MOVE]
+        >>> plateau = {'max_x': 5, 'max_y': 5}
+        >>> execute_instructions(rover_position, instructions, plateau)
+        {'x': 2, 'y': 3, 'direction': CompassDirection.EAST}
     """
     logger.info(f"Starting execution of instructions for rover at position: {position}")
     updated_position = {**position}

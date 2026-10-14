@@ -20,28 +20,18 @@ logger = get_logger(__name__)
 def argument_type_validator(
     argument_types: dict[str, type | tuple[type, ...]],
 ) -> Callable[..., Callable[..., Any]]:
-    """
-    A decorator function that inspects the data types of the arguments passed to the
-    wrapped function and raises a TypeError exception if they are not valid for the
-    decorated function's arguments. If the wrapped function's input argument match their
-    expected data types then the wrapped function is executed and its output returned.
+    """Create a decorator that validates a function's argument types.
 
     Args:
-        `argument_types`: A dictionary where each key is one of the wrapped function's
-        arguments and its value is the object type that that argument should be. e.g.:
-        ```python
-        {"name": str, "count": int}
-        ```
-        NOTE:- If a function argument accepts more than one data type, a tuple containing
-        each of the valid data types can be used. e.g.:
-        ```python
-        {"name": str, "count": (int, float)}
-        ```
+        argument_types: Mapping from parameter names to accepted types.
+            Use a tuple to allow multiple types for a parameter.
+
     Returns:
-        The result of the executed wrapped function
+        A decorator that checks argument types before calling the function.
+
     Raises:
-        TypeError: If the data type of any argument passed to the wrapped function does
-        not match the expected data type as defined in the `argument_types` dictionary.
+        TypeError: When a decorated function is called with an argument
+            whose type is not among the types specified for that parameter.
     """
 
     def decorator(func) -> Callable[..., Any]:
@@ -79,16 +69,6 @@ def argument_type_validator(
                         f"but got {type(arg_value)}"
                     )
 
-                # if not isinstance(arg_value, argument_types[arg]):
-                #     logger.error(
-                #         f"Function {func.__name__} received invalid argument data "
-                #         f"type. Expected {argument_types[arg]} but got "
-                #         f"{type(arg_value)}"
-                #     )
-                #     raise TypeError(
-                #         f"Expected {argument_types[arg]} as type for {arg} argument "
-                #         f"but got {type(arg_value)}"
-                #     )
             return func(*args, **kwargs)
 
         return wrapper
@@ -98,17 +78,29 @@ def argument_type_validator(
 
 @argument_type_validator({"text": str})
 def parse_plateau(text: str) -> dict[str, int]:
-    """
-    Parses the "plateau" line of a mission input to return a dictionary
-    containing the maximum x and y coordinates of the mission grid.
+    """Parses the "plateau" line of a mission input to return a dictionary.
+
+    The returned dictionary contains the maximum x and y coordinates of
+    the mission grid.
+
+    The supplied x and y values must both be greater than 0.
 
     Args:
         text: The plateau data in string format with x and y coordinates
-            separated by a space e.g. "4 6". The x coordinate (4) is the
-            first value and the y coordinate (6) is the second value
+            separated by a space e.g. `'4 6'`. The x coordinate (`4`) is the
+            first value and the y coordinate (`6`) is the second value
 
     Returns:
-        A dictionary in the format: {"max_x": 4, "max_y": 6}
+        A dictionary containing the `max_x` and `max_y` properties of the
+            plateau
+
+    Raises:
+        InvalidPlateauError: if argument passed is in an invalid format or
+            `x` or `y` values are not both greater than `0`.
+
+    Examples:
+        >>> parse_plateau('4 6')
+        {'max_x': 4, 'max_y': 6}
     """
     valid_format = r"^\d{1,2} \d{1,2}$"
     regex = re.compile(valid_format)
@@ -136,19 +128,23 @@ def parse_plateau(text: str) -> dict[str, int]:
 @argument_type_validator({"text": str})
 def parse_position(text: str) -> dict[str, int | CompassDirection | RoverType]:
     """
-    Parses a rover's position line from the mission input.
+    Parses a rover's position line from the mission input and returns as a dict.
 
-    The line contains the rover's ``x`` and ``y`` coordinates and facing
+    The line contains the rover's `x` and `y` coordinates and facing
     direction. It may also include a rover type. Values must be separated
     by single spaces.
 
-    :param text: Position in the format ``x y direction [rover_type]``.
-        The direction must be ``N``, ``E``, ``S``, or ``W``. The optional
-        rover type must be ``C`` (Cargo) or ``S`` (Science).
-    :type text: str
-    :returns: A dictionary containing integer coordinates, the direction, and the rover type.
-    :rtype: dict[str, int | CompassDirection | RoverType]
-    :raises InvalidPositionError: If the argument passed to ``text`` does not conform to the format requirementss
+    Args:
+        text: Position in the format ``x y direction [rover_type]``.
+            The direction must be ``N``, ``E``, ``S``, or ``W``. The optional
+            rover type must be ``C`` (Cargo) or ``S`` (Science).
+
+    Returns:
+        A dictionary containing integer coordinates, the direction, and the rover type.
+
+    Raises:
+        InvalidPositionError: When the argument passed to ``text`` does not
+            conform to the format requirementss
 
     Example:
 
@@ -187,21 +183,24 @@ def parse_position(text: str) -> dict[str, int | CompassDirection | RoverType]:
 
 @argument_type_validator({"text": str})
 def parse_instructions(text: str) -> list[Instruction]:
-    """
-    Parses a rover's instructions line and returns the instructions as
-    a list of Instruction enum class instances.
+    """Parse a rover's instruction string into instruction enum members.
+
+    Each character represents one instruction. Only `L`, `M`, and `R` are
+    accepted; the input must not contain spaces or other separators.
 
     Args:
-        text: A text string representing the rover's instructions where
-        each character in the string represents a distinct instruction.
-        Only the characters "L", "M" and "R" should be used where:
-            L = Rotate the rover 90deg to the left
-            M = Move the rover one square forward in the direction it is facing
-            R = Rotate the rover 90deg to the right
+        text: A sequence of rover instruction characters.
 
     Returns:
-        A list containing each instruction as an instance of the Instruction enum class.
-        e.g. "LMR" input would return [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
+        The corresponding `Instruction` enum members, in input order.
+        An empty string returns an empty list.
+
+    Raises:
+        InvalidInstructionError: If `text` contains an unsupported character.
+
+    Examples:
+        >>> parse_instructions("LMR")
+        [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
     """
     try:
         instruction_list = [Instruction(char) for char in text]
@@ -214,40 +213,37 @@ def parse_instructions(text: str) -> list[Instruction]:
 
 @argument_type_validator({"text": str})
 def parse_mission(text: str) -> dict[str, dict | list]:
-    """
-    Parses an entire mission input and returns the data in a formatted
-    dictionary.
+    """Parse a mission input and return the data in a formatted dictionary.
 
     Args:
-        text: The mission data in string format e.g.
-            5 5
-            1 2 N
-            LMLMLMLMM
-            3 3 E
-            MMRMMRMRRM
-
+        text: The mission data in string format e.g.\n
+            5 5\n
+            1 2 N\n
+            LMLMLMLMM\n
+            3 3 E\n
+            MMRMMRMRRM\n
             Where the first line is the dimensions of the plateau and
             subsequent lines represent the position and instructions
-            for each rover. Each rover has two lines associated with it:
-            the first is the rover's position (1 2 N) and the second is
-            that rover's instructions (LMLMLMLMM)
+            for each rover. Each rover has two lines associated with it -\n
+                The first is the rover's position (`1 2 N`)\n
+                The second is that rover's instructions (`LMLMLMLMM`).
 
-        Returns:
-            Dictionary in the format:
-            {
-                "plateau": {"max_x": 5, "max_y": 5},
-                "rovers": [
-                    {
-                        "position": {"x": 1, "y": 2, "direction": CompassDirection.NORTH},
-                        "instructions": ["L", "M", "L", "M", "L", "M", "L", "M", "M"]
-                    },
-                    {
-                        "position": {"x": 3, "y": 3, "direction": CompassDirection.EAST},
-                        "instructions": ["M", "M", "R", "M", "M", "R", "M", "R", "R", "M"]
-                    }
-                ]
-            }
+    Returns:
+        A dictionary containing the parsed mission's data.
 
+    Examples:
+        >>> mission = (
+        ...     "5 5\\n"
+        ...     "1 2 N\\n"
+        ...     "LMLMLMLMM\\n"
+        ...     "3 3 E\\n"
+        ...     "MMRMMRMRRM"
+        )
+        >>> result = parse_mission(mission)
+        >>> result["plateau"]
+        {'max_x': 5, 'max_y': 5}
+        >>> print(len(result.rovers()))
+        2
     """
     mission_lines = [*enumerate(text.split("\n"))]
     total_mission_lines = len(mission_lines)
@@ -281,18 +277,17 @@ def parse_mission(text: str) -> dict[str, dict | list]:
 
 
 def load_mission_from_file(path: str | Path) -> str:
-    """
-    Reads the file located at path and returns its contents as a string.
+    """Read the file located at path and return its contents as a string.
 
     Args:
-        path: the filepath of the file to be read as either a string or Path object
+        path: the filepath of the file to be read.
 
     Returns:
-        The contents of the read file as a string
+        The contents of the file located at `path`.
 
     Raises:
-        TypeError: If argument passed as path is not string or Path object type
-        FileNotFoundError: If no file could be found at the path provided as the path argument
+        TypeError: If argument passed to `path` is not a valid type.
+        FileNotFoundError: If no file could be found at `path`.
     """
     if not isinstance(path, (str, Path)):
         raise TypeError(f"Expected type str or Path as path argument. Got {type(path)}")
@@ -304,6 +299,34 @@ def load_mission_from_file(path: str | Path) -> str:
 
 
 def validate_rover_type_from_input() -> RoverType | None:
+    """Prompt for user selection of rover type and return as `RoverType` member if valid.
+
+    If the user enters an invalid response an error message is printed and the user
+    is prompted again for input.
+
+    `'abort'` can be entered as a user response which will cause this function to
+    return `None` which allows the `mission_cli` to abort mission loading.
+
+    Returns:
+        A member of the `RoverType` class if user response is valid.
+            `None` if user response is `'abort'`.
+
+    Examples:
+        When user selects a cargo rover:
+            ```
+            Prompt: Enter rover type here
+            User enters: C
+            Return Value: `RoverType.CARGO`
+            ```
+
+            When user aborts:
+            ```
+            Prompt: Enter rover type here
+            User enters: abort
+            Return Value: None
+            ```
+
+    """
     valid_rover_type = False
     while not valid_rover_type:
         user_input = input(
@@ -333,6 +356,33 @@ def validate_rover_type_from_input() -> RoverType | None:
 
 
 def validate_instructions_from_input() -> list[Instruction] | None:
+    """Prompt for user input of instructions and return as `list` of `Instruction`.
+
+    If the user enters an invalid response an error message is printed and the user
+    is prompted again for input.
+
+    `'abort'` can be entered as a user response which will cause this function to
+    return `None` which allows the `mission_cli` to abort mission loading.
+
+    Returns:
+        A `list` of enum member `Instruction` if user response is valid.
+            `None` if user response is `'abort'`.
+
+    Examples:
+        When user selects a cargo rover:
+            ```
+            Prompt: Enter instructions here
+            User enters: LMR
+            Return Value: `[Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]`
+            ```
+
+            When user aborts:
+            ```
+            Prompt: Enter instructions here
+            User enters: abort
+            Return Value: None
+            ```
+    """
     valid_instructions = False
     while not valid_instructions:
         user_input = input(

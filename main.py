@@ -25,27 +25,27 @@ def execute_mission(
     archive_path: Path | str = Path("mission_archive"),
 ) -> str | None:
     """
-    Takes a mission in string format and executes the instructions for each rover the mission contains. If the input string is valid, a string containing each rover's new position after execution of its instruction is returned. If input is invalid, the function aborts and prints the reason to the terminal.
+    Execute each rover's instructions in the passed mission.
 
-    :param mission: Can be an instance of the Mission class or a text string.\n
-        If a text string, the text must follow this format:\n
-        The size of the mission plateau followed by each rover's position
-        and the movement instructions it is required to execute.
-        The format of the string must be:\n
-        "5 5"  # Plateau size x y\n
-        "1 2 N"  # Position of the first rover x y direction\n
-        "LMR"  # Instructions for the first rover to execute\n
-        "3 3 E"  # Position of the nth rover\n
-        "RML"  # Instructions for the nth rover to execute\n
-    :type mission: str | Mission
-    :param archive_path: The path to save the mission archive in JSON format.
-    :type archive_path: str or Path
+    If the input is valid, a string containing each rover's new position
+    after execution of its instruction is returned. The output is saved to
+    disk as a JSON file at the path passed to `archive_path`. If input is
+    invalid, the function aborts and prints the reason to the terminal.
 
-    :rtype: str
-    :returns: A string containing the final positions of each rover on a new line:
+    Args:
+        mission: Can be an instance of `Mission` or a string. If a string,
+            the format of the string must be:
+                "5 5"  # Plateau size x y
+                "1 2 N"  # Position of the first rover x y direction
+                "LMR"  # Instructions for the first rover to execute
+                "3 3 E"  # Position of the nth rover
+                "RML"  # Instructions for the nth rover to execute
+        archive_path: The path to save the mission archive in JSON format.
 
-        0 2 N S\n
-        3 2 E C\n
+    Returns: A string containing the final positions of each rover on a new line:
+
+        '0 2 N S'
+        '3 2 E C'
     """
     if not os.path.exists(archive_path):
         err_msg = (
@@ -101,6 +101,16 @@ def execute_mission(
 
 
 def mission_cli() -> str | None:
+    """
+    Construct a `Mission` from user prompting.
+
+    The function gives the user successive terminal prompts to input the
+    required mission plateau and rover details. Invalid responses are
+    reported to the user and the prompt is given again to retry entry.
+    Once all mission details have been input and the user chooses not to
+    add another rover, the mission is executed and written to disk as a
+    JSON file. The file is written to path `./mission_archive`.
+    """
     mission = Mission()
     plateau = Plateau.from_input()
 

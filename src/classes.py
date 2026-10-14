@@ -24,21 +24,29 @@ logger = get_logger(__name__)
 
 
 class Plateau:
+    """
+    Represent the rectangular grid on which rovers operate.
+
+    The minimum coordinates are fixed at zero. The maximum coordinates are
+    set during initialization and can be changed afterward, but must remain
+    positive.
+
+    Attributes:
+        max_x: The maximum x-coordinate of the plateau.
+        max_y: The maximum y-coordinate of the plateau.
+    """
+
     @argument_type_validator({"max_x": int, "max_y": int})
     def __init__(self, max_x: int, max_y: int) -> None:
         """
-        Class object representing the mission grid plateau with the
-        properties:
-            `min_x`
-            `min_y`
-            `max_x`
-            `max_y`
+        Initialize the plateau dimensions.
 
-        The `min_x` and `min_y` properties are both set to 0 at class initialisation
-        and cannot be modified.
+        Args:
+            max_x: The positive maximum x-coordinate.
+            max_y: The positive maximum y-coordinate.
 
-        The `max_x` and `max_y` properties are set at class initialisation but
-        can be modified after initialisation.
+        Raises:
+            InvalidPlateauError: If either dimension is not positive.
         """
         logger.info("Initialising plateau...")
         self.max_x = max_x
@@ -52,14 +60,16 @@ class Plateau:
     def min_x(self) -> int:
         """
         Returns the minimum x value of the mission grid plateau which is
-        fixed at 0
+        fixed at `0`.
         """
         return 0
 
     @property
     def max_x(self) -> int:
         """
-        Returns the maximum x value of the mission grid plateau.
+        The maximum `x` coordinate of the `Plateau`.
+
+        The value must be greater than `0`.
         """
         return self._max_x
 
@@ -67,10 +77,13 @@ class Plateau:
     @argument_type_validator({"value": int})
     def max_x(self, value: int) -> None:
         """
-        Sets the maximum x value of the mission grid plateau.
+        Set the maximum `x` value of the `Plateau`.
+
+        Args:
+            value: The positive maximum x-coordinate.
 
         Raises:
-            `InvalidPlateauError` if a value of 0 or less is passed.
+            InvalidPlateauError: if a value of `0` or less is passed.
         """
         if value <= 0:
             err_msg = f"Plateau max_x value must be greater than 0. Got {value}"
@@ -83,14 +96,16 @@ class Plateau:
     def min_y(self) -> int:
         """
         Returns the minimum y value of the mission grid plateau which is
-        fixed at 0
+        fixed at `0`.
         """
         return 0
 
     @property
     def max_y(self) -> int:
         """
-        Returns the maximum y value of the mission grid plateau.
+        Returns the maximum `y` value of the `Plateau`.
+
+        The maximum `y` value must be greater than `0`.
         """
         return self._max_y
 
@@ -98,10 +113,13 @@ class Plateau:
     @argument_type_validator({"value": int})
     def max_y(self, value: int) -> None:
         """
-        Sets the maximum y value of the mission grid plateau.
+        Sets the maximum `y` value of the mission grid plateau.
+
+        Args:
+            value: The positive maximum y-coordinate.
 
         Raises:
-            `InvalidPlateauError` if a value of 0 or less is passed.
+            InvalidPlateauError: if a value of `0` or less is passed.
         """
         if value <= 0:
             err_msg = f"Plateau max_y value must be greater than 0. Got {value}"
@@ -129,6 +147,7 @@ class Plateau:
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Return this class instance as a dictionary."""
         return {
             "min_x": self.min_x,
             "max_x": self.max_x,
@@ -139,6 +158,32 @@ class Plateau:
     @classmethod
     @argument_type_validator({"parameters": dict})
     def from_dict(cls, parameters: dict[str, int]) -> "Plateau":
+        """
+        Construct a `Plateau` instance from a dictionary.
+
+        Args:
+            parameters: A dictionary containing the required parameters
+                to instantiate a `Plateau` object. The required keys are
+                `max_x` and `max_y`. Both keys must have positive integer
+                values.
+
+        Returns:
+            An instance of the `Plateau` class with `max_x` and `max_y`
+                attributes mapped to the dictionary passed to the method.
+
+        Raises:
+            LoadFromDictError: When the `dict` passed to `parameters` does
+                not contain all of the required keys.
+
+        Examples:
+            >>> plateau_dict = {'max_x': 4, 'max_y': 6}
+            >>> plateau = Plateau.from_dict(plateau_dict)
+            >>> plateau.max_x
+            4
+            >>> plateau.max_y
+            6
+
+        """
         reqd_keys = ["max_x", "max_y"]
         for reqd_key in reqd_keys:
             if reqd_key not in parameters:
@@ -153,6 +198,19 @@ class Plateau:
 
     @classmethod
     def from_input(cls) -> "Plateau | None":
+        """
+        Construct a `Plateau` instance from user prompting.
+
+        If the user enters an invalid response an error message is printed and the user
+        is prompted again for input.
+
+        `'abort'` can be entered as a user response which will cause this function to
+        return `None` which allows the `mission_cli` to abort mission loading.
+
+        Returns:
+            An instance of `Plateau` if user enters valid response. `None` if user
+            response is `'abort'`.
+        """
         valid_plateau = False
         while not valid_plateau:
             user_input = input(
@@ -180,7 +238,35 @@ class Plateau:
 
 
 class Position:
+    """
+    Represent a position on the rectangular grid on which rovers operate.
+
+    `x` and `y` attributes must be within the minimum and maximum `x` and `y`
+    attributes of the mission `Plateau`.
+
+    Attributes:
+        x: The x-coordinate of the `Position` on the rectangular mission
+            `Plateau`
+        y: The y-coordinate of the `Position` on the rectangular mission
+            `Plateau`
+        direction: a `CompassDirection` enum member representing the cardinal
+            direction that the `Position` is facing (NESW).
+    """
+
     def __init__(self, x: int, y: int, direction: CompassDirection) -> None:
+        """
+        Initialise the position attributes.
+
+        Args:
+            x: The x-coordinate the position represents.
+            y: The y-coordinate the position represents.
+            direction: The direction of facing the position represents.
+
+        Raises:
+            InvalidPositionError: When `x` or `y` values are invalid.
+            TypeError: When a type other than `CompassDirection` is passed as
+                an argument to `direction`.
+        """
         self.x = x
         self.y = y
         self.direction = direction
@@ -188,7 +274,7 @@ class Position:
     @property
     def x(self) -> int:
         """
-        Returns the position's `x` value as an integer.
+        Returns the position's `x` coordinate.
         """
         return self._x
 
@@ -196,10 +282,10 @@ class Position:
     @argument_type_validator({"value": int})
     def x(self, value: int) -> None:
         """
-        Sets the position's `x` value as an integer.
+        Sets the position's `x` coordinate.
 
         Raises:
-            `InvalidPositionError` if a negative value is passed.
+            InvalidPositionError: When a negative value is passed.
         """
         if value < 0:
             raise InvalidPositionError(f"The x value cannot be negative. Got {value}")
@@ -208,9 +294,7 @@ class Position:
 
     @property
     def y(self) -> int:
-        """
-        Returns the position's `y` value as an integer.
-        """
+        """Returns the position's `y` value as an integer."""
         return self._y
 
     @y.setter
@@ -220,7 +304,7 @@ class Position:
         Sets the position's `y` value as an integer.
 
         Raises:
-            `InvalidPositionError` if a negative value is passed.
+            InvalidPositionError: if a negative value is passed.
         """
         if value < 0:
             raise InvalidPositionError(f"The y value cannot be negative. Got {value}")
@@ -230,7 +314,7 @@ class Position:
     @property
     def direction(self) -> CompassDirection:
         """
-        Returns the position's direction as an instance of the CompassDirection enum class.
+        Returns the position's `direction`.
         """
         return self._direction
 
@@ -238,7 +322,7 @@ class Position:
     @argument_type_validator({"value": CompassDirection})
     def direction(self, value: CompassDirection) -> None:
         """
-        Sets the position's `direction` as an instance of the CompassDirection enum class.
+        Sets the position's `direction`.
         """
         self._direction = value
 
@@ -253,11 +337,54 @@ class Position:
         return f"{{x: {self.x}, y: {self.y}, direction: {self.direction}}}"
 
     def to_dict(self) -> dict[str, Any]:
+        """
+        Return the class attributes as a dictionary.
+
+        Args:
+
+        Examples:
+            ```python
+            >>> position = Position(1, 2, N)
+            >>> position.to_dict()
+            {'x': 1, 'y': 2, 'direction': 'N'}
+            ```
+        """
+
         return {"x": self.x, "y": self.y, "direction": self.direction.value}
 
     @classmethod
     @argument_type_validator({"parameters": dict})
     def from_dict(cls, parameters: dict[str, Any]) -> "Position":
+        """
+        Construct a `Position` instance from a dictionary.
+
+        Args:
+            parameters: A dictionary containing the required parameters
+                to instantiate a `Position` object. The required keys
+                are `x`, `y` and `direction`. `x` and `y` must be
+                non-negative integers. `direction` must be a single
+                character string representing a direction of facing
+                where `'N'` = `NORTH`, `'E'` = `EAST`, `'S'` = `SOUTH` and
+                `'W'` = `WEST`.
+
+        Returns:
+            An instance of `Position` with `x`, `y` and `direction`
+                attributes mapped to the dictionary passed to `parameters`.
+
+        Raises:
+            LoadFromDictError: When the `dict` passed to `parameters` does
+                not contain all of the required keys.
+
+        Examples:
+            >>> position_dict = {'x': 1, 'y': 2, 'direction': 'N'}
+            >>> position = Position.from_dict(position_dict)
+            >>> position.x
+            1
+            >>> position.y
+            2
+            >>> position.direction
+            CompassDirection.NORTH
+        """
         reqd_keys = ["x", "y", "direction"]
         for reqd_key in reqd_keys:
             if reqd_key not in parameters:
@@ -274,6 +401,19 @@ class Position:
 
     @classmethod
     def from_input(cls, plateau: Plateau | None = None) -> "Position | None":
+        """
+        Construct a `Position` instance from user prompting.
+
+        If the user enters an invalid response an error message is printed and the user
+        is prompted again for input.
+
+        `'abort'` can be entered as a user response which will cause this function to
+        return `None` which allows the `mission_cli` to abort mission loading.
+
+        Returns:
+            An instance of `Position` if user enters valid response. `None` if user
+            response is `'abort'`.
+        """
         valid_position = False
         while not valid_position:
             user_input = input(
@@ -313,6 +453,24 @@ class Position:
 
 
 class Rover:
+    """
+    Represent a rover that can be operated within the plateau dimensions.
+
+    Attributes:
+        start_position: The rover's position _prior_ to any mission execution.
+        instructions: The navigational instructions that the rover will is to
+            follow during mission execution.
+        plateau: An instance of `Plateau` that contains the plateau's
+            dimensions for reference when executing rover navigation.
+        rover_type: A `RoverType` enum member representing what type of rover
+            the `Rover` instance represents. Defaults to `RoverType.SCIENCE`
+            if not specified.
+        latest_position: The rover's position _after_ any instructions have
+            been executed. Defaults to the same as `start_position` if no
+            instructions have been executed.
+
+    """
+
     def __init__(
         self,
         start_position: Position,
@@ -321,6 +479,26 @@ class Rover:
         rover_type: RoverType = RoverType.SCIENCE,
         latest_position: Position | None = None,
     ) -> None:
+        """
+        Initialise the rover attributes
+
+        Args:
+            start_position: The starting position of the rover _prior_ to execution
+                of mission instructions.
+            instructions: The navigational instructions the rover is to follow during
+                mission execution.
+            plateau: The mission `Plateau`.
+            rover_type: The type of rover to be represented. Defaults to
+                `RoverType.SCIENCE` if not specified.
+            latest_position: The rover's position _after_ execution of mission
+                instructions. Defaults to the same as `start_position` if no
+                instructions have been executed.
+
+        Raises:
+            InvalidPositionError: When the starting position contains coordinates
+                that are outside of the minimum or maximum `x` or `y` dimensions
+                of the mission's plateau.
+        """
         logger.info("Initialising rover...")
 
         # It is necessary to validate the rover's start_position in relation to the mission
@@ -362,20 +540,38 @@ class Rover:
 
     @property
     def start_position(self) -> Position:
+        """Return the start position."""
         return self._start_position
 
     @start_position.setter
     @argument_type_validator({"position": Position})
     def start_position(self, position: Position) -> None:
+        """
+        Set the start position.
+
+        Args:
+            position: A `Position` instance representing the rover's starting
+                position.
+        """
         self._start_position = position
 
     @property
     def instructions(self) -> list[Instruction]:
+        """Return the rover's instructions."""
         return self._instructions
 
     @instructions.setter
     @argument_type_validator({"instructions": (str, list)})
     def instructions(self, instructions: str | list[Instruction]) -> None:
+        """
+        Set the rover's instructions.
+
+        Args:
+            instructions: A string with a sequence of valid characters or
+                a list of `Instruction` enum members. If passing a string,
+                the valid characters are `'L'` = left rotate, `'R'` = right
+                rotate and `'M'` = move.
+        """
         if isinstance(instructions, str):
             self._instructions = parse_instructions(instructions)
         else:
@@ -383,28 +579,63 @@ class Rover:
 
     @property
     def latest_position(self) -> Position:
+        """Return the latest position."""
         return self._latest_position
 
     @latest_position.setter
     @argument_type_validator({"position": Position})
     def latest_position(self, position: Position) -> None:
+        """
+        Set the latest position.
+
+        Args:
+            position: A `Position` instance representing the rover's latest
+                position.
+        """
         self._latest_position = position
 
     @property
     def rover_type(self) -> RoverType:
+        """Return the rover type."""
         return self._rover_type
 
     @rover_type.setter
     @argument_type_validator({"rover_type": RoverType})
     def rover_type(self, rover_type: RoverType) -> None:
+        """
+        Set the rover type.
+
+        Args:
+            rover_type: A member of the `RoverType` enum.
+        """
         self._rover_type = rover_type
 
     @property
     def movement_speed(self) -> int:
+        """
+        Return the rover's movement speed.
+
+        The movement speed is dependent on `rover_type` and is
+        retrieved from the `MOVEMENT_SPEED` lookup dictionary.
+        """
         return MOVEMENT_SPEED[self.rover_type]
 
     @argument_type_validator({"plateau": Plateau})
     def _move(self, plateau: Plateau) -> Position:
+        """
+        Move the rover in the direction in the direction it is facing.
+
+        The distance moved is determined by `movement_speed`.
+
+        The mission's `Plateau` is passed as an argument so that this
+        function can determine when a move would take the rover outside
+        of the minimum and maximum dimensions of the `Plateau`. If the
+        move would take the rover beyond the bounds of the `Plateau`,
+        the move is aborted.
+
+        Args:
+            plateau: The mission `Plateau` instance.
+        """
         initial_position = repr(self.latest_position)
         logger.info(f"Moving rover at position: {initial_position}")
         start_x = self.latest_position.x
@@ -415,6 +646,9 @@ class Rover:
         new_x = start_x + (base_x_move * movement_speed_multiplier)
         new_y = start_y + (base_y_move * movement_speed_multiplier)
 
+        # Verify whether the move would take the rover outside of the bounds
+        # of the mission `Plateau`. Abort the move if the rover would be
+        # taken beyond the bounds of the `Plateau`.
         if (
             plateau.min_x <= new_x <= plateau.max_x
             and plateau.min_y <= new_y <= plateau.max_y
@@ -435,6 +669,13 @@ class Rover:
 
     @argument_type_validator({"instruction": Instruction})
     def _rotate(self, instruction: Instruction) -> Position:
+        """
+        Rotate the rover left or right by 90 deg.
+
+        Args:
+            instruction: A member of the `Instruction` enum specifying
+                whether to rotate left or right.
+        """
         initial_position = repr(self.latest_position)
         logger.info(f"Rotating rover at {initial_position}...")
         rotated_direction = ROTATIONS[self.latest_position.direction][instruction]
@@ -451,6 +692,23 @@ class Rover:
         self,
         plateau: Plateau,
     ) -> Position:
+        """
+        Navigate the rover according to its instructions.
+
+        Takes the mission's `Plateau` as an argument so that it can be
+        referenced to ensure the rover does not move beyond plateau's bounds.
+
+        Updates the `latest_position` attribute of this instance of `Rover` to
+        the final rover position once all instructions are executed as well as
+        returning it.
+
+        Args:
+            plateau: The mission's `Plateau` instance.
+
+        Returns:
+            A `Position` instance of the rover's final position once all
+                instructions are executed.
+        """
         initial_position = repr(self.latest_position)
         logger.info(
             f"Beginning execution of instructions for rover at {initial_position} with "
@@ -480,10 +738,45 @@ class Rover:
         )
 
     def instructions_to_string(self) -> str:
+        """
+        Return a string of characters representing the rover's `instructions`.
+
+        Returns:
+            A string of the rover's instructions.
+
+        Examples:
+            >>> rover = Rover(
+            ...     Position(1, 2 CompassDirection.NORTH),
+            ...     'LMR',
+            ...     Plateau(5, 5)
+            ... )
+            >>> rover.instructions_to_string()
+            'LMR'
+        """
         instructions_to_char = [instruction.value for instruction in self.instructions]
         return "".join(instructions_to_char)
 
     def to_dict(self) -> dict[str, Any]:
+        """
+        Return a dictionary containing the rover's attributes.
+
+        Returns:
+            A dictionary of the rover's attributes.
+
+        Examples:
+            >>> rover = Rover(
+            ...     Position(1, 2 CompassDirection.NORTH),
+            ...     'LMR',
+            ...     Plateau(5, 5)
+            ... )
+            >>> rover.to_dict()
+            {
+                'start_position': {'x': 1, 'y': 2, 'direction': 'N'},
+                'latest_position':  {'x': 1, 'y': 2, 'direction': 'N'},
+                'instructions': 'LMR',
+                'rover_type': 'S'
+            }
+        """
         return {
             "start_position": self.start_position.to_dict(),
             "latest_position": self.latest_position.to_dict(),
@@ -494,6 +787,43 @@ class Rover:
     @classmethod
     @argument_type_validator({"parameters": dict, "plateau": Plateau})
     def from_dict(cls, parameters: dict[str, Any], plateau: Plateau) -> "Rover":
+        """
+        Construct a `Rover` instance from a dictionary.
+
+        Args:
+            parameters: A dictionary containing the required parameters
+                to instantiate a `Rover` object. The required keys
+                are `start_position`, `latest_position`, `instructions` and
+                `rover_type`. `start_position` and `latest_position` values must
+                be dictionaries of positions that can be parsed by the
+                `Position.from_dict()` method. `instructions` must be the
+                instructions a string of a sequence of characters e.g `'LMR'`.
+                `rover_type` must be contain a string with a single character
+                representing the rover type e.g. `'S'` or `'C'`.
+            plateau: The mission `Plateau`.
+
+        Returns:
+            An instance of `Rover` with `start_position`, `latest_position`,
+                `instructions`, and `rover_type` attributes mapped to the
+                dictionary passed to `parameters`.
+
+        Raises:
+            LoadFromDictError: When the `dict` passed to `parameters` does
+                not contain all of the required keys.
+
+        Examples:
+            >>> rover_dict = {
+            ...     'start_position': {'x': 1, 'y': 2, 'direction': 'N'},
+            ...     'latest_position': {'x': 1, 'y': 2, 'direction': 'N'},
+            ...     'instructions': 'LMR',
+            ...     'rover_type': 'S'
+            ... }
+            >>> rover = Rover.from_dict(rover_dict)
+            >>> rover.instructions
+            [Instruction.LEFT, Instruction.MOVE, Instruction.RIGHT]
+            >>> rover.rover_type
+            RoverType.SCIENCE
+        """
         reqd_keys = {"start_position", "latest_position", "instructions", "rover_type"}
         for reqd_key in reqd_keys:
             if reqd_key not in parameters:
@@ -517,31 +847,70 @@ class Rover:
 
 
 class Mission:
+    """
+    Represent a mission and its associated components.
+
+    Attributes:
+        plateau: The mission's rectangular plateau.
+        rovers: A list of the rovers that are associated with the mission
+        timestamp: Timestamp of when the mission was executed.
+
+    """
+
     def __init__(
         self,
         plateau: Plateau | None = None,
         rovers: list[Rover] | None = None,
         timestamp: datetime | None = None,
     ) -> None:
+        """
+        Initialise the mission attributes
+
+        Args:
+            plateau: A `Plateau` instance representing the rectangular grid
+                that rovers and move around on. Can be omitted and set after
+                class construction.
+            rovers: A list of the `Rover` instances that can be moved around
+                within the mission's plateau. Can be omitted and set after
+                class construction.
+            timestamp: The timestamp of the mission's execution. Can be omitted
+                and set after class construction.
+
+        """
         self.plateau = plateau
         self.rovers = rovers
         self.timestamp = timestamp
 
     @property
     def plateau(self) -> Plateau | None:
+        """Return the mission's `Plateau`."""
         return self._plateau
 
     @plateau.setter
     @argument_type_validator({"plateau": (Plateau, type(None))})
     def plateau(self, plateau: Plateau | None) -> None:
+        """
+        Set the mission's `Plateau`.
+
+        Args:
+            plateau: A valid `Plateau` instance.
+        """
         self._plateau = deepcopy(plateau)
 
     @property
     def rovers(self) -> list[Rover]:
+        """Return the mission's `Rover` list."""
         return self._rovers
 
     @rovers.setter
     def rovers(self, rovers: list | None) -> None:
+        """
+        Set the mission's `Rover` list.
+
+        Args:
+            rovers: A list of `Rover` instances. Can be `None` in which case
+            `rovers` is set to an empty list.
+        """
         if not rovers:
             self._rovers = []
         else:
@@ -549,18 +918,65 @@ class Mission:
 
     @argument_type_validator({"rover": Rover})
     def add_rover(self, rover: Rover) -> None:
+        """
+        Add a new `Rover` instance to `rovers`.
+
+        Args:
+            rover: A valid `Rover` instance.
+        """
         self._rovers.append(rover)
 
     @property
     def timestamp(self) -> datetime | None:
+        """Return the mission's timestamp"""
         return self._timestamp
 
     @timestamp.setter
     @argument_type_validator({"timestamp": (datetime, type(None))})
     def timestamp(self, timestamp: datetime | None) -> None:
+        """
+        Set the mission's timestamp.
+
+        Args:
+            timestamp: A `datetime` object.
+        """
         self._timestamp = timestamp
 
     def to_dict(self) -> dict[str, Any]:
+        """
+        Return a dictionary of the mission instance's attributes.
+
+        Returns:
+            A dictionary of the rover's attributes.
+
+        Examples:
+            >>> plateau = Plateau(5, 5)
+            >>> rover = Rover(
+            ...     Position(1, 2 CompassDirection.NORTH),
+            ...     'LMR',
+            ...     Plateau(5, 5)
+            ... )
+            >>> rovers = [rover]
+            >>> timestamp = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+            >>> mission = Mission(
+            ...     plateau=plateau,
+            ...     rovers=rovers,
+            ...     timestamp=timestamp
+            ... )
+            >>> mission.to_dict()
+            {
+                'plateau': {'min_x': 0, 'max_x': 5, 'min_y': 0, 'max_y': 5},
+                'rovers': [
+                    {
+                        'start_position': {'x': 1, 'y': 2, 'direction': 'N'},
+                        'latest_position': {'x': 1, 'y': 2, 'direction': 'N'},
+                        'instructions': 'LMR',
+                        'rover_type': 'S'
+                    }
+                ],
+                'timestamp': '2026-01-01T12:00:00+00:00'
+            }
+        """
         plateau = self.plateau.to_dict() if self.plateau else None
         rovers = [rover.to_dict() for rover in self.rovers]
         timestamp = self.timestamp.isoformat() if self.timestamp else None
@@ -570,6 +986,45 @@ class Mission:
     @classmethod
     @argument_type_validator({"parameters": dict})
     def from_dict(cls, parameters: dict) -> "Mission":
+        """
+            Construct a `Mission` instance from a dictionary.
+
+            Args:
+                parameters: A dictionary containing the required parameters
+                    to instantiate a `Mission` object. The required keys
+                    are `plateau`, `rovers` and `timestamp`. The `plateau` value
+                    must be a dictionary of a plateau that can be parsed by the
+                    `Plateau.from_dict()` method. The `rovers` value must be a list
+                    containing a dictionary for each rover and each dictionary
+                    must be able to be parsed by the `Rover.from_dict()` method.
+                    The `timestamp` key must be a string in isoformat.
+
+            Returns:
+                An instance of `Mission` with `plateau`, `rovers`,
+                    and `rover_type` attributes mapped to the dictionary passed to
+                    `parameters`.
+
+            Raises:
+                LoadFromDictError: When the `dict` passed to `parameters` does
+                    not contain all of the required keys.
+
+            Examples:
+                >>> mission_dict = {
+                ...     'plateau': {'min_x': 0, 'max_x': 8, 'min_y': 0, 'max_y': 8},
+                ...     'rovers': [
+                ...         {
+                ...             'start_position': {'x': 1, 'y': 2, 'direction': 'N'},
+                ...             'latest_position': {'x': 1, 'y': 2, 'direction': 'N'},
+                ...             'instructions': 'LMR',
+                ...             'rover_type': 'S',
+                ...         },
+                ...     ],
+                ...     'timestamp': '2026-01-01T12:00:00+00:00',
+        }
+                >>> mission = Mission.from_dict(mission_dict)
+                >>> mission.timestamp
+                2026-01-01 12:00:00+00:00
+        """
         reqd_keys = {"plateau", "rovers", "timestamp"}
         for reqd_key in reqd_keys:
             if reqd_key not in parameters:
@@ -597,6 +1052,18 @@ class Mission:
 
     @argument_type_validator({"target_directory": (str, Path)})
     def archive(self, target_directory: str | Path) -> Path:
+        """
+        Write the mission data to disk.
+
+        The data is saved to a JSON file at the target directory with the
+        mission timestamp in the filename.
+
+        Args:
+            target_directory: Path for where the archive will be written to.
+
+        Returns:
+            The path to the saved JSON file.
+        """
         directory = (
             Path(target_directory)
             if isinstance(target_directory, str)
@@ -627,6 +1094,18 @@ class Mission:
 
     @classmethod
     def load_from_archive(cls, path: str | Path) -> "Mission | None":
+        """
+        Construct an instance of the `Mission` class from a saved archive.
+
+        Args:
+            path: The location of the mission archive JSON file to be loaded
+
+        Returns:
+            A `Mission` class instance
+
+        Raises:
+            FileNotFoundError: When the path passed to `path` cannot be found.
+        """
         try:
             with open(path, "r") as file:
                 loaded_data = json.load(file)
@@ -639,6 +1118,25 @@ class Mission:
             print(err_msg)
 
     def execute(self, archive_path: str | Path = Path("mission_archive")) -> str:
+        """
+        Execute a mission.
+
+        Each rover's instructions are executed in turn and the mission is
+        written to an archive JSON file.
+
+        Args:
+            path: The path where the mission archive JSON file is to be saved.
+
+        Returns:
+            A string containing the final positions of each rover which conforms
+                to the project's required mission output.
+
+        Examples:
+            >>> mission = Mission(...)
+            >>> mission.execute()
+            1 3 N S
+            5 1 E C
+        """
         # Validate archive_path exists at the start so that further
         # execution can be stopped before trying to write to a
         # non-existent path
